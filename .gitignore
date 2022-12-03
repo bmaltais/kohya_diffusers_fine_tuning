@@ -2,4 +2,4 @@ venv
 venv1
 mytraining.ps
 __pycache__
-sample\*.txt
+*.txt
