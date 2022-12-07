@@ -14,7 +14,7 @@ import cv2
 import torch
 from torchvision import transforms
 
-import fine_tuning_utils
+import model_util
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -47,16 +47,15 @@ def main(args):
     print(f"no metadata / メタデータファイルがありません: {args.in_json}")
     return
 
-  # モデル形式のオプション設定を確認する
-  use_stable_diffusion_format = os.path.isfile(args.model_name_or_path)
+  # # モデル形式のオプション設定を確認する
+  # use_stable_diffusion_format = os.path.isfile(args.model_name_or_path)
 
-  # モデルを読み込む
-  if use_stable_diffusion_format:
-    print("load StableDiffusion checkpoint")
-    _, vae, _ = fine_tuning_utils.load_models_from_stable_diffusion_checkpoint(args.v2, args.model_name_or_path)
-  else:
-    print("load Diffusers pretrained models")
-    vae = AutoencoderKL.from_pretrained(args.model_name_or_path, subfolder="vae")
+  # # モデルを読み込む
+  # if use_stable_diffusion_format:
+  #   print("load StableDiffusion checkpoint")
+  #   # _, vae, _ = model_util.load_models_from_stable_diffusion_checkpoint(args.v2, args.model_name_or_path)
+  # else:
+  #   print("load Diffusers pretrained models")
 
   weight_dtype = torch.float32
   if args.mixed_precision == "fp16":
@@ -64,6 +63,7 @@ def main(args):
   elif args.mixed_precision == "bf16":
     weight_dtype = torch.bfloat16
 
+  vae = model_util.load_vae(args.model_name_or_path, weight_dtype)
   vae.eval()
   vae.to(DEVICE, dtype=weight_dtype)
 
@@ -71,7 +71,7 @@ def main(args):
   max_reso = tuple([int(t) for t in args.max_resolution.split(',')])
   assert len(max_reso) == 2, f"illegal resolution (not 'width,height') / 画像サイズに誤りがあります。'幅,高さ'で指定してください: {args.max_resolution}"
 
-  bucket_resos, bucket_aspect_ratios = fine_tuning_utils.make_bucket_resolutions(
+  bucket_resos, bucket_aspect_ratios = model_util.make_bucket_resolutions(
       max_reso, args.min_bucket_reso, args.max_bucket_reso)
 
   # 画像をひとつずつ適切なbucketに割り当てながらlatentを計算する

@@ -1,6 +1,8 @@
 # v2: select precision for saved checkpoint
 # v3: add logging for tensorboard, fix to shuffle=False in DataLoader (shuffling is in dataset)
 # v4: support SD2.0, add lr scheduler options, supports save_every_n_epochs and save_state for DiffUsers model
+# v5: refactor to use model_util, support safetensors, add settings to use Diffusers' xformers, add log prefix
+
 
 # このスクリプトのライセンスは、train_dreambooth.pyと同じくApache License 2.0とします
 # License:
@@ -19,8 +21,12 @@
 # limitations under the License.
 
 # License of included scripts:
+
 # Diffusers: ASL 2.0 https://github.com/huggingface/diffusers/blob/main/LICENSE
 
+# Memory efficient attention:
+# based on https://github.com/lucidrains/memory-efficient-attention-pytorch/blob/main/memory_efficient_attention_pytorch/flash_attention.py
+# MIT https://github.com/lucidrains/memory-efficient-attention-pytorch/blob/main/LICENSE
 
 import argparse
 import math
@@ -34,25 +40,24 @@ from tqdm import tqdm
 import torch
 from accelerate import Accelerator
 from accelerate.utils import set_seed
-from transformers import CLIPTextModel, CLIPTokenizer
+from transformers import CLIPTokenizer
 import diffusers
-from diffusers import DDPMScheduler, StableDiffusionPipeline, UNet2DConditionModel
+from diffusers import DDPMScheduler, StableDiffusionPipeline
 import numpy as np
 from einops import rearrange
 from torch import einsum
 
-import fine_tuning_utils
+import model_util
 
 # Tokenizer: checkpointから読み込むのではなくあらかじめ提供されているものを使う
 TOKENIZER_PATH = "openai/clip-vit-large-patch14"
 V2_STABLE_DIFFUSION_PATH = "stabilityai/stable-diffusion-2"     # ここからtokenizerだけ使う
 
 # checkpointファイル名
-LAST_CHECKPOINT_NAME = "last.ckpt"
-LAST_STATE_NAME = "last-state"
-LAST_DIFFUSERS_DIR_NAME = "last"
-EPOCH_CHECKPOINT_NAME = "epoch-{:06d}.ckpt"
 EPOCH_STATE_NAME = "epoch-{:06d}-state"
+LAST_STATE_NAME = "last-state"
+
+LAST_DIFFUSERS_DIR_NAME = "last"
 EPOCH_DIFFUSERS_DIR_NAME = "epoch-{:06d}"
 
 
@@ -278,7 +283,8 @@ def train(args):
     logging_dir = None
   else:
     log_with = "tensorboard"
-    logging_dir = args.logging_dir + "/" + time.strftime('%Y%m%d%H%M%S', time.localtime())
+    log_prefix = "" if args.log_prefix is None else args.log_prefix
+    logging_dir = args.logging_dir + "/" + log_prefix + time.strftime('%Y%m%d%H%M%S', time.localtime())
   accelerator = Accelerator(gradient_accumulation_steps=args.gradient_accumulation_steps,
                             mixed_precision=args.mixed_precision, log_with=log_with, logging_dir=logging_dir)
 
@@ -300,8 +306,7 @@ def train(args):
   # モデルを読み込む
   if use_stable_diffusion_format:
     print("load StableDiffusion checkpoint")
-    text_encoder, _, unet = fine_tuning_utils.load_models_from_stable_diffusion_checkpoint(
-        args.v2, args.pretrained_model_name_or_path)
+    text_encoder, _, unet = model_util.load_models_from_stable_diffusion_checkpoint(args.v2, args.pretrained_model_name_or_path)
   else:
     print("load Diffusers pretrained models")
     pipe = StableDiffusionPipeline.from_pretrained(args.pretrained_model_name_or_path, tokenizer=None, safety_checker=None)
@@ -310,8 +315,33 @@ def train(args):
     unet = pipe.unet
     del pipe
 
+  # Diffusers版のxformers使用フラグを設定する関数
+  def set_diffusers_xformers_flag(model, valid):
+    #   model.set_use_memory_efficient_attention_xformers(valid)            # 次のリリースでなくなりそう
+    # pipeが自動で再帰的にset_use_memory_efficient_attention_xformersを探すんだって(;´Д｀)
+    # U-Netだけ使う時にはどうすればいいのか……仕方ないからコピって使うか
+
+    # Recursively walk through all the children.
+    # Any children which exposes the set_use_memory_efficient_attention_xformers method
+    # gets the message
+    def fn_recursive_set_mem_eff(module: torch.nn.Module):
+      if hasattr(module, "set_use_memory_efficient_attention_xformers"):
+        module.set_use_memory_efficient_attention_xformers(valid)
+
+      for child in module.children():
+        fn_recursive_set_mem_eff(child)
+
+    fn_recursive_set_mem_eff(model)
+
   # モデルに xformers とか memory efficient attention を組み込む
-  replace_unet_modules(unet, args.mem_eff_attn, args.xformers)
+  if args.diffusers_xformers:
+    print("Use xformers by Diffusers")
+    set_diffusers_xformers_flag(unet, True)
+  else:
+    # Windows版のxformersはfloatで学習できないのでxformersを使わない設定も可能にしておく必要がある
+    print("Disable Diffusers' xformers")
+    set_diffusers_xformers_flag(unet, False)
+    replace_unet_modules(unet, args.mem_eff_attn, args.xformers)
 
   if not fine_tuning:
     # Hypernetwork
@@ -399,6 +429,8 @@ def train(args):
     unet, hypernetwork, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
         unet, hypernetwork, optimizer, train_dataloader, lr_scheduler)
 
+  # TODO accelerateのconfigに指定した型とオプション指定の型とをチェックして異なれば警告を出す
+
   # resumeする
   if args.resume is not None:
     print(f"resume training from state: {args.resume}")
@@ -415,7 +447,7 @@ def train(args):
   print(f"  num batches per epoch / 1epochのバッチ数: {len(train_dataloader)}")
   print(f"  num epochs / epoch数: {num_train_epochs}")
   print(f"  batch size per device / バッチサイズ: {args.train_batch_size}")
-  print(f"  total train batch size (with parallel & distributed) / 総バッチサイズ（並列学習含む）: {total_batch_size}")
+  print(f"  total train batch size (with parallel & distributed & accumulation) / 総バッチサイズ（並列学習、勾配合計含む）: {total_batch_size}")
   print(f"  gradient ccumulation steps / 勾配を合計するステップ数 = {args.gradient_accumulation_steps}")
   print(f"  total optimization steps / 学習ステップ数: {args.max_train_steps}")
 
@@ -425,6 +457,7 @@ def train(args):
   # v4で更新：clip_sample=Falseに
   # Diffusersのtrain_dreambooth.pyがconfigから持ってくるように変更されたので、clip_sample=Falseになるため、それに合わせる
   # 既存の1.4/1.5/2.0はすべてschdulerのconfigは（クラス名を除いて）同じ
+  # よくソースを見たら学習時は関係ないや(;'∀')　
   noise_scheduler = DDPMScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear",
                                   num_train_timesteps=1000, clip_sample=False)
 
@@ -570,18 +603,18 @@ def train(args):
       if (epoch + 1) % args.save_every_n_epochs == 0 and (epoch + 1) < num_train_epochs:
         print("saving checkpoint.")
         os.makedirs(args.output_dir, exist_ok=True)
-        ckpt_file = os.path.join(args.output_dir, EPOCH_CHECKPOINT_NAME.format(epoch + 1))
+        ckpt_file = os.path.join(args.output_dir, model_util.get_epoch_ckpt_name(args.use_safetensors, epoch + 1))
 
         if fine_tuning:
           if use_stable_diffusion_format:
-            fine_tuning_utils.save_stable_diffusion_checkpoint(
+            model_util.save_stable_diffusion_checkpoint(
                 args.v2, ckpt_file, accelerator.unwrap_model(text_encoder), accelerator.unwrap_model(unet),
                 args.pretrained_model_name_or_path, epoch + 1, global_step, save_dtype)
           else:
             out_dir = os.path.join(args.output_dir, EPOCH_DIFFUSERS_DIR_NAME.format(epoch + 1))
             os.makedirs(out_dir, exist_ok=True)
-            fine_tuning_utils.save_diffusers_checkpoint(args.v2, out_dir, accelerator.unwrap_model(text_encoder),
-                                                        accelerator.unwrap_model(unet), args.pretrained_model_name_or_path, save_dtype)
+            model_util.save_diffusers_checkpoint(args.v2, out_dir, accelerator.unwrap_model(text_encoder),
+                                                 accelerator.unwrap_model(unet), args.pretrained_model_name_or_path)
         else:
           save_hypernetwork(ckpt_file, accelerator.unwrap_model(hypernetwork))
 
@@ -609,19 +642,18 @@ def train(args):
     os.makedirs(args.output_dir, exist_ok=True)
     if fine_tuning:
       if use_stable_diffusion_format:
-        ckpt_file = os.path.join(args.output_dir, LAST_CHECKPOINT_NAME)
+        ckpt_file = os.path.join(args.output_dir, model_util.get_last_ckpt_name(args.use_safetensors))
         print(f"save trained model as StableDiffusion checkpoint to {ckpt_file}")
-        fine_tuning_utils.save_stable_diffusion_checkpoint(
+        model_util.save_stable_diffusion_checkpoint(
             args.v2, ckpt_file, text_encoder, unet, args.pretrained_model_name_or_path, epoch, global_step, save_dtype)
       else:
         # Create the pipeline using using the trained modules and save it.
         print(f"save trained model as Diffusers to {args.output_dir}")
         out_dir = os.path.join(args.output_dir, LAST_DIFFUSERS_DIR_NAME)
         os.makedirs(out_dir, exist_ok=True)
-        fine_tuning_utils.save_diffusers_checkpoint(args.v2, out_dir, text_encoder, unet,
-                                                    args.pretrained_model_name_or_path, save_dtype)
+        model_util.save_diffusers_checkpoint(args.v2, out_dir, text_encoder, unet, args.pretrained_model_name_or_path)
     else:
-      ckpt_file = os.path.join(args.output_dir, LAST_CHECKPOINT_NAME)
+      ckpt_file = os.path.join(args.output_dir, model_util.get_last_ckpt_name(args.use_safetensors))
       print(f"save trained model to {ckpt_file}")
       save_hypernetwork(ckpt_file, hypernetwork)
 
@@ -814,7 +846,7 @@ def replace_unet_modules(unet: diffusers.models.unet_2d_condition.UNet2DConditio
 
 
 def replace_unet_cross_attn_to_memory_efficient():
-  print("Replace CrossAttention.forward to use FlashAttention")
+  print("Replace CrossAttention.forward to use FlashAttention (not xformers)")
   flash_func = FlashAttentionFunction
 
   def forward_flash_attn(self, x, context=None, mask=None):
@@ -921,6 +953,8 @@ if __name__ == '__main__':
   parser.add_argument("--dataset_repeats", type=int, default=None, help="num times to repeat dataset / 学習にデータセットを繰り返す回数")
   parser.add_argument("--output_dir", type=str, default=None,
                       help="directory to output trained model, save as same format as input / 学習後のモデル出力先ディレクトリ（入力と同じ形式で保存）")
+  parser.add_argument("--use_safetensors", action='store_true',
+                      help="use safetensors format for StableDiffusion checkpoint / StableDiffusionのcheckpointをsafetensors形式で保存する")
   parser.add_argument("--train_text_encoder", action="store_true", help="train text encoder / text encoderも学習する")
   parser.add_argument("--hypernetwork_module", type=str, default=None,
                       help='train hypernetwork instead of fine tuning, module to use / fine tuningの代わりにHypernetworkの学習をする場合、そのモジュール')
@@ -942,6 +976,8 @@ if __name__ == '__main__':
                       help="use memory efficient attention for CrossAttention / CrossAttentionに省メモリ版attentionを使う")
   parser.add_argument("--xformers", action="store_true",
                       help="use xformers for CrossAttention / CrossAttentionにxformersを使う")
+  parser.add_argument("--diffusers_xformers", action='store_true',
+                      help='use xformers by diffusers (Hypernetworks doen\'t work) / Diffusersでxformersを使用する（Hypernetwork利用不可）')
   parser.add_argument("--learning_rate", type=float, default=2.0e-6, help="learning rate / 学習率")
   parser.add_argument("--max_train_steps", type=int, default=1600, help="training steps / 学習ステップ数")
   parser.add_argument("--seed", type=int, default=None, help="random seed for training / 学習時の乱数のseed")
@@ -959,6 +995,7 @@ if __name__ == '__main__':
                       help="show images for debugging (do not train) / デバッグ用に学習データを画面表示する（学習は行わない）")
   parser.add_argument("--logging_dir", type=str, default=None,
                       help="enable logging and output TensorBoard log to this directory / ログ出力を有効にしてこのディレクトリにTensorBoard用のログを出力する")
+  parser.add_argument("--log_prefix", type=str, default=None, help="add prefix for each log directory / ログディレクトリ名の先頭に追加する文字列")
   parser.add_argument("--lr_scheduler", type=str, default="constant",
                       help="scheduler to use for learning rate / 学習率のスケジューラ: linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup")
   parser.add_argument("--lr_warmup_steps", type=int, default=0,

@@ -3,3 +3,4 @@ venv1
 mytraining.ps
 __pycache__
 *.txt
+cudnn_windows
