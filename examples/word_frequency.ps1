@@ -1,4 +1,4 @@
-$txt_files_folder = "D:\dataset\vintage\raw2"
+$txt_files_folder = "D:\dataset\soda-stream\raw"
 $txt_prefix_to_ignore = "a digital drawing of"
 $txt_postfix_ti_ignore = "by silvery trait"
 

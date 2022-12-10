@@ -316,44 +316,36 @@ cp v2_inference\v2-inference-v.yaml $output_dir"\last.yaml"
 ## Options list
 
 ```txt
-usage: fine_tune.py [-h] [--v2] [--v_parameterization]
-                    [--pretrained_model_name_or_path PRETRAINED_MODEL_NAME_OR_PATH]
+usage: fine_tune.py [-h] [--v2] [--v_parameterization] [--pretrained_model_name_or_path PRETRAINED_MODEL_NAME_OR_PATH]
                     [--in_json IN_JSON] [--shuffle_caption] [--train_data_dir TRAIN_DATA_DIR]
-                    [--dataset_repeats DATASET_REPEATS] [--output_dir OUTPUT_DIR]
-                    [--use_safetensors] [--train_text_encoder]
-                    [--hypernetwork_module HYPERNETWORK_MODULE]
-                    [--hypernetwork_weights HYPERNETWORK_WEIGHTS]
-                    [--save_every_n_epochs SAVE_EVERY_N_EPOCHS] [--save_state] [--resume RESUME]  
-                    [--max_token_length {None,150,225}] [--train_batch_size TRAIN_BATCH_SIZE]     
-                    [--use_8bit_adam] [--mem_eff_attn] [--xformers] [--diffusers_xformers]        
-                    [--learning_rate LEARNING_RATE] [--max_train_steps MAX_TRAIN_STEPS]
+                    [--dataset_repeats DATASET_REPEATS] [--output_dir OUTPUT_DIR] [--use_safetensors]
+                    [--train_text_encoder] [--hypernetwork_module HYPERNETWORK_MODULE]
+                    [--hypernetwork_weights HYPERNETWORK_WEIGHTS] [--save_every_n_epochs SAVE_EVERY_N_EPOCHS]
+                    [--save_state] [--resume RESUME] [--max_token_length {None,150,225}]
+                    [--train_batch_size TRAIN_BATCH_SIZE] [--use_8bit_adam] [--mem_eff_attn] [--xformers]
+                    [--diffusers_xformers] [--learning_rate LEARNING_RATE] [--max_train_steps MAX_TRAIN_STEPS]
                     [--seed SEED] [--gradient_checkpointing]
-                    [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS]
-                    [--mixed_precision {no,fp16,bf16}] [--save_precision {None,float,fp16,bf16}]  
-                    [--clip_skip CLIP_SKIP] [--debug_dataset] [--logging_dir LOGGING_DIR]
-                    [--log_prefix LOG_PREFIX] [--lr_scheduler LR_SCHEDULER]
+                    [--gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS] [--mixed_precision {no,fp16,bf16}]      
+                    [--save_precision {None,float,fp16,bf16}] [--clip_skip CLIP_SKIP] [--debug_dataset]
+                    [--logging_dir LOGGING_DIR] [--log_prefix LOG_PREFIX] [--lr_scheduler LR_SCHEDULER]
                     [--lr_warmup_steps LR_WARMUP_STEPS]
 
 options:
   -h, --help            show this help message and exit
-  --v2                  load Stable Diffusion v2.0 model / Stable Diffusion 2.0のモデルを読み込む 
-  --v_parameterization  enable v-parameterization training / v-parameterization学習を有効にする   
+  --v2                  load Stable Diffusion v2.0 model / Stable Diffusion 2.0のモデルを読み込む
+  --v_parameterization  enable v-parameterization training / v-parameterization学習を有効にする
   --pretrained_model_name_or_path PRETRAINED_MODEL_NAME_OR_PATH
-                        pretrained model to train, directory to Diffusers model or
-                        StableDiffusion checkpoint /
+                        pretrained model to train, directory to Diffusers model or StableDiffusion checkpoint /
                         学習元モデル、Diffusers形式モデルのディレクトリまたはStableDiffusionのckptファイル
   --in_json IN_JSON     metadata file to input / 読みこむメタデータファイル
-  --shuffle_caption     shuffle comma-separated caption when fine tuning / fine
-                        tuning時にコンマで区切られたcaptionの各要素をshuffleする
+  --shuffle_caption     shuffle comma-separated caption when fine tuning / fine tuning時にコンマで区切られたcaptionの各 要素をshuffleする
   --train_data_dir TRAIN_DATA_DIR
                         directory for train images / 学習画像データのディレクトリ
   --dataset_repeats DATASET_REPEATS
                         num times to repeat dataset / 学習にデータセットを繰り返す回数
   --output_dir OUTPUT_DIR
-                        directory to output trained model, save as same format as input /
-                        学習後のモデル出力先ディレクトリ（入力と同じ形式で保存）
-  --use_safetensors     use safetensors format for StableDiffusion checkpoint /
-                        StableDiffusionのcheckpointをsafetensors形式で保存する
+                        directory to output trained model, save as same format as input / 学習後のモデル出力先ディレクトリ（入力と同じ形式で保存）
+  --use_safetensors     use safetensors format to save / checkpoint、モデルをsafetensors形式で保存する
   --train_text_encoder  train text encoder / text encoderも学習する
   --hypernetwork_module HYPERNETWORK_MODULE
                         train hypernetwork instead of fine tuning, module to use / fine
@@ -362,21 +354,19 @@ options:
                         hypernetwork weights to initialize for additional training /
                         Hypernetworkの学習時に読み込む重み（Hypernetworkの追加学習）
   --save_every_n_epochs SAVE_EVERY_N_EPOCHS
-                        save checkpoint every N epochs / 学習中のモデルを指定エポックごとに保存す る
-  --save_state          save training state additionally (including optimizer states etc.) /      
+                        save checkpoint every N epochs / 学習中のモデルを指定エポックごとに保存する
+  --save_state          save training state additionally (including optimizer states etc.) /
                         optimizerなど学習状態も含めたstateを追加で保存する
   --resume RESUME       saved state to resume training / 学習再開するモデルのstate
   --max_token_length {None,150,225}
-                        max token length of text encoder (default for 75, 150 or 225) / text      
+                        max token length of text encoder (default for 75, 150 or 225) / text
                         encoderのトークンの最大長（未指定で75、150または225が指定可）
   --train_batch_size TRAIN_BATCH_SIZE
                         batch size for training / 学習時のバッチサイズ
-  --use_8bit_adam       use 8bit Adam optimizer (requires bitsandbytes) / 8bit
-                        Adamオプティマイザを使う（bitsandbytesのインストールが必要）
-  --mem_eff_attn        use memory efficient attention for CrossAttention /
-                        CrossAttentionに省メモリ版attentionを使う
+  --use_8bit_adam       use 8bit Adam optimizer (requires bitsandbytes) / 8bit Adamオプティマイザを使う（bitsandbytesの インストールが必要）
+  --mem_eff_attn        use memory efficient attention for CrossAttention / CrossAttentionに省メモリ版attentionを使う   
   --xformers            use xformers for CrossAttention / CrossAttentionにxformersを使う
-  --diffusers_xformers  use xformers by diffusers (Hypernetworks doen't work) /
+  --diffusers_xformers  use xformers by diffusers (Hypernetworks doesn't work) /
                         Diffusersでxformersを使用する（Hypernetwork利用不可）
   --learning_rate LEARNING_RATE
                         learning rate / 学習率
@@ -384,35 +374,38 @@ options:
                         training steps / 学習ステップ数
   --seed SEED           random seed for training / 学習時の乱数のseed
   --gradient_checkpointing
-                        enable gradient checkpointing / grandient checkpointingを有効にする       
+                        enable gradient checkpointing / grandient checkpointingを有効にする
   --gradient_accumulation_steps GRADIENT_ACCUMULATION_STEPS
-                        Number of updates steps to accumulate before performing a
-                        backward/update pass / 学習時に逆伝播をする前に勾配を合計するステップ数   
+                        Number of updates steps to accumulate before performing a backward/update pass /
+                        学習時に逆伝播をする前に勾配を合計するステップ数
   --mixed_precision {no,fp16,bf16}
                         use mixed precision / 混合精度を使う場合、その精度
   --save_precision {None,float,fp16,bf16}
                         precision in saving (available in StableDiffusion checkpoint) /
-                        保存時に精度を変更して保存する（StableDiffusion形式での保存時のみ有効）   
+                        保存時に精度を変更して保存する（StableDiffusion形式での保存時のみ有効）
   --clip_skip CLIP_SKIP
                         use output of nth layer from back of text encoder (n>=1) / text
                         encoderの後ろからn番目の層の出力を用いる（nは1以上）
-  --debug_dataset       show images for debugging (do not train) / デバッグ用に学習データを画面表 示する（学習は行わない）
+  --debug_dataset       show images for debugging (do not train) / デバッグ用に学習データを画面表示する（学習は行わない ）
   --logging_dir LOGGING_DIR
                         enable logging and output TensorBoard log to this directory /
-                        ログ出力を有効にしてこのディレクトリにTensorBoard用のログを出力する       
+                        ログ出力を有効にしてこのディレクトリにTensorBoard用のログを出力する
   --log_prefix LOG_PREFIX
                         add prefix for each log directory / ログディレクトリ名の先頭に追加する文字列
   --lr_scheduler LR_SCHEDULER
-                        scheduler to use for learning rate / 学習率のスケジューラ: linear, cosine,
-                        cosine_with_restarts, polynomial, constant (default),
-                        constant_with_warmup
+                        scheduler to use for learning rate / 学習率のスケジューラ: linear, cosine, cosine_with_restarts,
+                        polynomial, constant (default), constant_with_warmup
   --lr_warmup_steps LR_WARMUP_STEPS
-                        Number of steps for the warmup in the lr scheduler (default is 0) /       
+                        Number of steps for the warmup in the lr scheduler (default is 0) /
                         学習率のスケジューラをウォームアップするステップ数（デフォルト0）
 ```
 
 ## Change history
 
+* 12/10 (v7):
+    - We have added support for Diffusers 0.10.2.
+    - In addition, we have made other fixes.
+    - For more information, please see the section on "Building the environment and preparing scripts for Diffusers" in our documentation.
 * 12/6 (v6): We have responded to reports that some models experience an error when saving in SafeTensors format.
 * 12/5 (v5):
     - .safetensors format is now supported. Install SafeTensors as "pip install safetensors". When loading, it is automatically determined by extension. Specify use_safetensors options when saving.
