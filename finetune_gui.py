@@ -3,6 +3,8 @@ import json
 import math
 import os
 import subprocess
+import pathlib
+import shutil
 
 
 def save_variables(
@@ -29,6 +31,9 @@ def save_variables(
     train_text_encoder,
     convert_to_safetensors,
     convert_to_ckpt,
+    create_buckets,
+    create_caption,
+    train
 ):
     # Return the values of the variables as a dictionary
     variables = {
@@ -54,6 +59,9 @@ def save_variables(
         "train_text_encoder": train_text_encoder,
         "convert_to_safetensors": convert_to_safetensors,
         "convert_to_ckpt": convert_to_ckpt,
+        "create_buckets": create_buckets,
+        "create_caption": create_caption,
+        "train": train
     }
 
     # Save the data to the selected file
@@ -68,28 +76,31 @@ def load_variables(file_path):
 
     # Return the values of the variables as a dictionary
     return (
-        my_data["pretrained_model_name_or_path"],
-        my_data["v2"],
-        my_data["v_model"],
-        my_data["train_dir"],
-        # my_data["model_list"],
-        my_data["image_folder"],
-        my_data["output_dir"],
-        my_data["max_resolution"],
-        my_data["learning_rate"],
-        my_data["lr_scheduler"],
-        my_data["lr_warmup"],
-        my_data["dataset_repeats"],
-        my_data["train_batch_size"],
-        my_data["epoch"],
-        my_data["save_every_n_epochs"],
-        my_data["mixed_precision"],
-        my_data["save_precision"],
-        my_data["seed"],
-        my_data["num_cpu_threads_per_process"],
-        my_data["train_text_encoder"],
-        my_data["convert_to_safetensors"],
-        my_data["convert_to_ckpt"],
+        my_data.get("pretrained_model_name_or_path", None),
+        my_data.get("v2", None),
+        my_data.get("v_model", None),
+        my_data.get("train_dir", None),
+        # my_data.get("model_list", None),
+        my_data.get("image_folder", None),
+        my_data.get("output_dir", None),
+        my_data.get("max_resolution", None),
+        my_data.get("learning_rate", None),
+        my_data.get("lr_scheduler", None),
+        my_data.get("lr_warmup", None),
+        my_data.get("dataset_repeats", None),
+        my_data.get("train_batch_size", None),
+        my_data.get("epoch", None),
+        my_data.get("save_every_n_epochs", None),
+        my_data.get("mixed_precision", None),
+        my_data.get("save_precision", None),
+        my_data.get("seed", None),
+        my_data.get("num_cpu_threads_per_process", None),
+        my_data.get("train_text_encoder", None),
+        my_data.get("convert_to_safetensors", None),
+        my_data.get("convert_to_ckpt", None),
+        my_data.get("create_buckets", None),
+        my_data.get("create_caption", None),
+        my_data.get("train", None)
     )
 
 
@@ -119,6 +130,21 @@ def train_model(
     convert_to_safetensors,
     convert_to_ckpt,
 ):
+    def save_inference_file(output_dir, v2, v_model):
+        # Copy inference model for v2 if required
+        if v2 and v_model:
+            print(f"Saving v2-inference-v.yaml as {output_dir}/'last.yaml'")
+            shutil.copy(
+                f"./v2_inference/v2-inference-v.yaml",
+                f"{output_dir}/'last.yaml'",
+            )
+        elif v2:
+            print(f"Saving v2-inference.yaml as {output_dir}/'last.yaml'")
+            shutil.copy(
+                f"./v2_inference/v2-inference.yaml",
+                f"{output_dir}/'last.yaml'",
+            )
+
     # create caption json file
     if create_caption:
         if not os.path.exists(train_dir):
@@ -131,7 +157,10 @@ def train_model(
             ".txt",
             image_folder,
             "{}/meta_cap.json".format(train_dir),
+            "--full_path",
         ]
+
+        print(command)
 
         # Run the command
         subprocess.run(command)
@@ -144,7 +173,6 @@ def train_model(
             image_folder,
             "{}/meta_cap.json".format(train_dir),
             "{}/meta_lat.json".format(train_dir),
-            "--full_path",
             pretrained_model_name_or_path,
             "--batch_size",
             "4",
@@ -152,7 +180,10 @@ def train_model(
             max_resolution,
             "--mixed_precision",
             mixed_precision,
+            "--full_path",
         ]
+
+        print(command)
 
         # Run the command
         subprocess.run(command)
@@ -206,36 +237,32 @@ def train_model(
         run_cmd += f" --seed={seed}"
         run_cmd += f" --save_precision={save_precision}"
 
-        # print(run_cmd)
-
-        # command = [
-        #     "accelerate",
-        #     "launch",
-        #     f"--num_cpu_threads_per_process={num_cpu_threads_per_process}",
-        #     f"script/fine_tune.py",
-        #     f"{v2_parm}",
-        #     f"{v_model_parm}",
-        #     f"{train_text_encoder_parm}",
-        #     f"--pretrained_model_name_or_path={pretrained_model_name_or_path}",
-        #     f"--in_json={train_dir}/meta_lat.json",
-        #     f"--train_data_dir={image_folder}",
-        #     f"--output_dir={output_dir}",
-        #     f"--train_batch_size={train_batch_size}",
-        #     f"--dataset_repeats={dataset_repeats}",
-        #     f"--learning_rate={learning_rate}",
-        #     f"--lr_scheduler={lr_scheduler}",
-        #     f"--lr_warmup_steps={lr_warmup_steps}",
-        #     f"--max_train_steps={max_train_steps}",
-        #     f"--use_8bit_adam",
-        #     f"--xformers",
-        #     f"--mixed_precision={mixed_precision}",
-        #     f"--save_every_n_epochs={save_every_n_epochs}",
-        #     f"--seed={seed}",
-        #     f"--save_precision={save_precision}",
-        # ]
-
+        print(run_cmd)
         # Run the command
         subprocess.run(run_cmd)
+
+    # check if output_dir/last is a directory... therefore it is a diffuser model
+    last_dir = pathlib.Path(f"{output_dir}/last")
+    print(last_dir)
+    if last_dir.is_dir():
+        if convert_to_ckpt:
+            print(f"Converting diffuser model {last_dir} to {last_dir}.ckpt")
+            os.system(
+                f"python ./tools/convert_diffusers20_original_sd.py {last_dir} {last_dir}.ckpt --{save_precision}"
+            )
+
+            save_inference_file(output_dir, v2, v_model)
+
+        if convert_to_safetensors:
+            print(f"Converting diffuser model {last_dir} to {last_dir}.safetensors")
+            os.system(
+                f"python ./tools/convert_diffusers20_original_sd.py {last_dir} {last_dir}.safetensors --{save_precision}"
+            )
+
+            save_inference_file(output_dir, v2, v_model)
+    else:
+        # Copy inference model for v2 if required
+        save_inference_file(output_dir, v2, v_model)
 
     # Return the values of the variables as a dictionary
     # return
@@ -424,6 +451,9 @@ with interface:
             train_text_encoder_input,
             convert_to_safetensors_input,
             convert_to_ckpt_input,
+            create_buckets,
+            create_caption,
+            train
         ],
     )
     b2.click(
@@ -452,6 +482,9 @@ with interface:
             train_text_encoder_input,
             convert_to_safetensors_input,
             convert_to_ckpt_input,
+            create_buckets,
+            create_caption,
+            train
         ],
         outputs=output,
     )
