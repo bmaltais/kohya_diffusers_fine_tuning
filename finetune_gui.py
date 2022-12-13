@@ -133,16 +133,16 @@ def train_model(
     def save_inference_file(output_dir, v2, v_model):
         # Copy inference model for v2 if required
         if v2 and v_model:
-            print(f"Saving v2-inference-v.yaml as {output_dir}/'last.yaml'")
+            print(f"Saving v2-inference-v.yaml as {output_dir}/last.yaml")
             shutil.copy(
                 f"./v2_inference/v2-inference-v.yaml",
-                f"{output_dir}/'last.yaml'",
+                f"{output_dir}/last.yaml",
             )
         elif v2:
-            print(f"Saving v2-inference.yaml as {output_dir}/'last.yaml'")
+            print(f"Saving v2-inference.yaml as {output_dir}/last.yaml")
             shutil.copy(
                 f"./v2_inference/v2-inference.yaml",
-                f"{output_dir}/'last.yaml'",
+                f"{output_dir}/last.yaml",
             )
 
     # create caption json file
@@ -421,9 +421,10 @@ with interface:
             create_caption = gr.inputs.Checkbox(label="Create Caption", default=True)
             create_buckets = gr.inputs.Checkbox(label="Create Buckets", default=True)
             train = gr.inputs.Checkbox(label="Train", default=True)
-        b3 = gr.Button("Run")
+    
+    b3 = gr.Button("Run")
 
-    output = gr.outputs.Textbox(label="Values of variables")
+    # output = gr.outputs.Textbox(label="Values of variables")
 
     b1.click(
         load_variables,
@@ -454,8 +455,9 @@ with interface:
             create_buckets,
             create_caption,
             train
-        ],
+        ]
     )
+    
     b2.click(
         save_variables,
         inputs=[
@@ -485,8 +487,7 @@ with interface:
             create_buckets,
             create_caption,
             train
-        ],
-        outputs=output,
+        ]
     )
     b3.click(
         train_model,
@@ -515,8 +516,7 @@ with interface:
             train_text_encoder_input,
             convert_to_safetensors_input,
             convert_to_ckpt_input,
-        ],
-        outputs=output,
+        ]
     )
 
 
