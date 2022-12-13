@@ -97,7 +97,15 @@ foreach ($file in $files) {
 }
 ```
 
-## Execution
+## GUI
+
+There is now support for GUI based training using gradio. You can start the GUI interface by running:
+
+```powershell
+python .\dreambooth_gui.py
+```
+
+## Manual cli Execution
 
 ### SD1.5 example
 
@@ -402,6 +410,9 @@ options:
 
 ## Change history
 
+* 12/13 (v8):
+    - WD14Tagger now works on its own.
+    - Added support for learning to fp16 up to the gradient. Go to "Building the environment and preparing scripts for Diffusers for more info".
 * 12/10 (v7):
     - We have added support for Diffusers 0.10.2.
     - In addition, we have made other fixes.

@@ -11,7 +11,7 @@ def save_variables(
     file_path,
     pretrained_model_name_or_path,
     v2,
-    v_model,
+    v_parameterization,
     # model_list,
     train_dir,
     image_folder,
@@ -39,7 +39,7 @@ def save_variables(
     variables = {
         "pretrained_model_name_or_path": pretrained_model_name_or_path,
         "v2": v2,
-        "v_model": v_model,
+        "v_parameterization": v_parameterization,
         # "model_list": model_list,
         "train_dir": train_dir,
         "image_folder": image_folder,
@@ -78,7 +78,7 @@ def load_variables(file_path):
     return (
         my_data.get("pretrained_model_name_or_path", None),
         my_data.get("v2", None),
-        my_data.get("v_model", None),
+        my_data.get("v_parameterization", None),
         my_data.get("train_dir", None),
         # my_data.get("model_list", None),
         my_data.get("image_folder", None),
@@ -110,7 +110,7 @@ def train_model(
     train,
     pretrained_model_name_or_path,
     v2,
-    v_model,
+    v_parameterization,
     train_dir,
     image_folder,
     output_dir,
@@ -130,9 +130,9 @@ def train_model(
     convert_to_safetensors,
     convert_to_ckpt,
 ):
-    def save_inference_file(output_dir, v2, v_model):
+    def save_inference_file(output_dir, v2, v_parameterization):
         # Copy inference model for v2 if required
-        if v2 and v_model:
+        if v2 and v_parameterization:
             print(f"Saving v2-inference-v.yaml as {output_dir}/last.yaml")
             shutil.copy(
                 f"./v2_inference/v2-inference-v.yaml",
@@ -204,19 +204,19 @@ def train_model(
         lr_warmup_steps = round(float(int(lr_warmup) * int(max_train_steps) / 100))
         print(f"lr_warmup_steps = {lr_warmup_steps}")
 
-        # print(f"v2: {v2}, v_model: {v_model}, train_text_encoder: {train_text_encoder}")
+        # print(f"v2: {v2}, v_parameterization: {v_parameterization}, train_text_encoder: {train_text_encoder}")
         # v2_parm = "--v2" if v2 else '""
-        # v_model_parm = "--v_parameterization" if v_model else '""
+        # v_parameterization_parm = "--v_parameterization" if v_parameterization else '""
         # train_text_encoder_parm = "--train_text_encoder" if train_text_encoder else '""
 
         # print(
-        #     f"v2: {v2_parm}, v_model: {v_model_parm}, train_text_encoder: {train_text_encoder_parm}"
+        #     f"v2: {v2_parm}, v_parameterization: {v_parameterization_parm}, train_text_encoder: {train_text_encoder_parm}"
         # )
 
         run_cmd = f'accelerate launch --num_cpu_threads_per_process={num_cpu_threads_per_process} "script/fine_tune.py"'
         if v2:
             run_cmd += " --v2"
-        if v_model:
+        if v_parameterization:
             run_cmd += " --v_parameterization"
         if train_text_encoder:
             run_cmd += " --train_text_encoder"
@@ -251,7 +251,7 @@ def train_model(
                 f"python ./tools/convert_diffusers20_original_sd.py {last_dir} {last_dir}.ckpt --{save_precision}"
             )
 
-            save_inference_file(output_dir, v2, v_model)
+            save_inference_file(output_dir, v2, v_parameterization)
 
         if convert_to_safetensors:
             print(f"Converting diffuser model {last_dir} to {last_dir}.safetensors")
@@ -259,50 +259,53 @@ def train_model(
                 f"python ./tools/convert_diffusers20_original_sd.py {last_dir} {last_dir}.safetensors --{save_precision}"
             )
 
-            save_inference_file(output_dir, v2, v_model)
+            save_inference_file(output_dir, v2, v_parameterization)
     else:
         # Copy inference model for v2 if required
-        save_inference_file(output_dir, v2, v_model)
+        save_inference_file(output_dir, v2, v_parameterization)
 
     # Return the values of the variables as a dictionary
     # return
 
 
-def set_pretrained_model_name_or_path_input(value, v2, v_model):
+def set_pretrained_model_name_or_path_input(value, v2, v_parameterization):
     # define a list of substrings to search for
-    substrings_v2 = ["stable-diffusion-2-1-base", "stable-diffusion-2-base"]
+    substrings_v2 = ["stabilityai/stable-diffusion-2-1-base", "stabilityai/stable-diffusion-2-base"]
 
-    # check if $v2 and $v_model are empty and if $pretrained_model_name_or_path contains any of the substrings in the v2 list
+    # check if $v2 and $v_parameterization are empty and if $pretrained_model_name_or_path contains any of the substrings in the v2 list
     if str(value) in substrings_v2:
         print("SD v2 model detected. Setting --v2 parameter")
         v2 = True
-        v_model = False
-        value = "stabilityai/{}".format(value)
+        v_parameterization = False
 
-        return value, v2, v_model
+        return value, v2, v_parameterization
 
     # define a list of substrings to search for v-objective
-    substrings_v_model = ["stable-diffusion-2-1", "stable-diffusion-2"]
+    substrings_v_parameterization = ["stabilityai/stable-diffusion-2-1", "stabilityai/stable-diffusion-2"]
 
-    # check if $v2 and $v_model are empty and if $pretrained_model_name_or_path contains any of the substrings in the v_model list
-    if str(value) in substrings_v_model:
-        print("SD v2 v_model detected. Setting --v2 parameter and --v_parameterization")
+    # check if $v2 and $v_parameterization are empty and if $pretrained_model_name_or_path contains any of the substrings in the v_parameterization list
+    if str(value) in substrings_v_parameterization:
+        print("SD v2 v_parameterization detected. Setting --v2 parameter and --v_parameterization")
         v2 = True
-        v_model = True
-        value = "stabilityai/{}".format(value)
+        v_parameterization = True
 
-        return value, v2, v_model
+        return value, v2, v_parameterization
+
+    # define a list of substrings to v1.x
+    substrings_v1_model = ["CompVis/stable-diffusion-v1-4", "runwayml/stable-diffusion-v1-5"]
+
+    if str(value) in substrings_v1_model:
+        v2 = False
+        v_parameterization = False
+
+        return value, v2, v_parameterization
 
     if value == "custom":
-        value = "<enter path to custom model or name of pretrained model>"
+        value = ""
         v2 = False
-        v_model = False
+        v_parameterization = False
 
-        return value, v2, v_model
-
-
-# Define the output element
-output = gr.outputs.Textbox(label="Values of variables")
+        return value, v2, v_parameterization
 
 interface = gr.Blocks()
 
@@ -310,52 +313,52 @@ with interface:
     gr.Markdown("Enter kohya finetuner parameter using this interface.")
     with gr.Accordion("Configuration File Load/Save", open=False):
         with gr.Row():
-            config_file_name = gr.inputs.Textbox(label="Config file name", default="")
-            b1 = gr.Button("Load config")
-            b2 = gr.Button("Save config")
-    with gr.Tab("model"):
+            config_file_name = gr.Textbox(label="Config file name", value="")
+            button_load_config = gr.Button("Load config")
+            button_save_config = gr.Button("Save config")
+    with gr.Tab("Source model"):
         # Define the input elements
         with gr.Row():
-            pretrained_model_name_or_path_input = gr.inputs.Textbox(
+            pretrained_model_name_or_path_input = gr.Textbox(
                 label="Pretrained model name or path",
-                default="<enter path to custom model or name of pretrained model>",
+                placeholder="enter the path to custom model or name of pretrained model",
             )
             model_list = gr.Dropdown(
-                label="Model Quick Pick",
+                label="(Optional) Model Quick Pick",
                 choices=[
                     "custom",
-                    "stable-diffusion-2-1-base",
-                    "stable-diffusion-2-base",
-                    "stable-diffusion-2-1",
-                    "stable-diffusion-2",
+                    "stabilityai/stable-diffusion-2-1-base",
+                    "stabilityai/stable-diffusion-2-base",
+                    "stabilityai/stable-diffusion-2-1",
+                    "stabilityai/stable-diffusion-2",
+                    "runwayml/stable-diffusion-v1-5",
+                    "CompVis/stable-diffusion-v1-4"
                 ],
-                value="custom",
             )
         with gr.Row():
-            v2_input = gr.inputs.Checkbox(label="v2", default=True)
-            v_model_input = gr.inputs.Checkbox(label="v_model", default=False)
+            v2_input = gr.Checkbox(label="v2", value=True)
+            v_parameterization_input = gr.Checkbox(label="v_parameterization", value=False)
         model_list.change(
             set_pretrained_model_name_or_path_input,
-            inputs=[model_list, v2_input, v_model_input],
-            outputs=[pretrained_model_name_or_path_input, v2_input, v_model_input],
+            inputs=[model_list, v2_input, v_parameterization_input],
+            outputs=[pretrained_model_name_or_path_input,
+                     v2_input, v_parameterization_input],
         )
-    with gr.Tab("training dataset and output directory"):
-        train_dir_input = gr.inputs.Textbox(
-            label="Train directory", default="D:\\models\\test\\samdoesart2"
-        )
-        image_folder_input = gr.inputs.Textbox(
-            label="Image folder", default="D:\\dataset\\samdoesart2\\raw"
-        )
-        output_dir_input = gr.inputs.Textbox(
-            label="Output directory",
-            default="D:\\models\\test\\samdoesart2\\model_e2\\",
-        )
-        max_resolution_input = gr.inputs.Textbox(
-            label="Max resolution", default="512,512"
-        )
-    with gr.Tab("training parameters"):
+    with gr.Tab("Directories"):
         with gr.Row():
-            learning_rate_input = gr.inputs.Textbox(label="Learning rate", default=1e-6)
+            train_dir_input = gr.Textbox(
+                label="Train directory", placeholder="directory where the training config files will be saved"
+            )
+            image_folder_input = gr.Textbox(
+                label="Image folder", placeholder="directory where the training folders containing the images are located"
+            )
+            output_dir_input = gr.Textbox(
+                label="Output directory",
+                placeholder="directory where the model will be saved"
+            )
+    with gr.Tab("Training parameters"):
+        with gr.Row():
+            learning_rate_input = gr.Textbox(label="Learning rate", value=1e-6)
             lr_scheduler_input = gr.Dropdown(
                 label="LR Scheduler",
                 choices=[
@@ -368,18 +371,18 @@ with interface:
                 ],
                 value="constant",
             )
-            lr_warmup_input = gr.inputs.Textbox(label="LR warmup", default=0)
+            lr_warmup_input = gr.Textbox(label="LR warmup", value=0)
         with gr.Row():
-            dataset_repeats_input = gr.inputs.Textbox(
-                label="Dataset repeats", default=40
+            dataset_repeats_input = gr.Textbox(
+                label="Dataset repeats", value=40
             )
-            train_batch_size_input = gr.inputs.Textbox(
-                label="Train batch size", default=1
+            train_batch_size_input = gr.Textbox(
+                label="Train batch size", value=1
             )
-            epoch_input = gr.inputs.Textbox(label="Epoch", default=1)
+            epoch_input = gr.Textbox(label="Epoch", value=1)
         with gr.Row():
-            save_every_n_epochs_input = gr.inputs.Textbox(
-                label="Save every N epochs", default=1
+            save_every_n_epochs_input = gr.Textbox(
+                label="Save every N epochs", value=1
             )
             mixed_precision_input = gr.Dropdown(
                 label="Mixed precision",
@@ -400,40 +403,40 @@ with interface:
                 value="fp16",
             )
         with gr.Row():
-            seed_input = gr.inputs.Textbox(label="Seed", default=1234)
-            num_cpu_threads_per_process_input = gr.inputs.Textbox(
-                label="Number of CPU threads per process", default=4
+            seed_input = gr.Textbox(label="Seed", value=1234)
+            num_cpu_threads_per_process_input = gr.Textbox(
+                label="Number of CPU threads per process", value=4
             )
-            train_text_encoder_input = gr.inputs.Checkbox(
-                label="Train text encoder", default=True
+            train_text_encoder_input = gr.Checkbox(
+                label="Train text encoder", value=True
             )
-    with gr.Tab("model conveersion"):
-        convert_to_safetensors_input = gr.inputs.Checkbox(
-            label="Convert to SafeTensors", default=False
+            max_resolution_input = gr.Textbox(
+                label="Max resolution", value="512,512"
+            )
+    with gr.Tab("Model conversion"):
+        convert_to_safetensors_input = gr.Checkbox(
+            label="Convert to SafeTensors", value=False
         )
-        convert_to_ckpt_input = gr.inputs.Checkbox(
-            label="Convert to CKPT", default=False
+        convert_to_ckpt_input = gr.Checkbox(
+            label="Convert to CKPT", value=False
         )
     # define the buttons
 
     with gr.Box():
         with gr.Row():
-            create_caption = gr.inputs.Checkbox(label="Create Caption", default=True)
-            create_buckets = gr.inputs.Checkbox(label="Create Buckets", default=True)
-            train = gr.inputs.Checkbox(label="Train", default=True)
+            create_caption = gr.Checkbox(label="Create Caption", value=True)
+            create_buckets = gr.Checkbox(label="Create Buckets", value=True)
+            train = gr.Checkbox(label="Train", value=True)
     
-    b3 = gr.Button("Run")
+    button_run = gr.Button("Run")
 
-    # output = gr.outputs.Textbox(label="Values of variables")
-
-    b1.click(
+    button_load_config.click(
         load_variables,
         inputs=[config_file_name],
         outputs=[
             pretrained_model_name_or_path_input,
             v2_input,
-            v_model_input,
-            # model_list,
+            v_parameterization_input,
             train_dir_input,
             image_folder_input,
             output_dir_input,
@@ -458,14 +461,13 @@ with interface:
         ]
     )
     
-    b2.click(
+    button_save_config.click(
         save_variables,
         inputs=[
             config_file_name,
             pretrained_model_name_or_path_input,
             v2_input,
-            v_model_input,
-            # model_list,
+            v_parameterization_input,
             train_dir_input,
             image_folder_input,
             output_dir_input,
@@ -489,7 +491,7 @@ with interface:
             train
         ]
     )
-    b3.click(
+    button_run.click(
         train_model,
         inputs=[
             create_caption,
@@ -497,7 +499,7 @@ with interface:
             train,
             pretrained_model_name_or_path_input,
             v2_input,
-            v_model_input,
+            v_parameterization_input,
             train_dir_input,
             image_folder_input,
             output_dir_input,
@@ -519,41 +521,6 @@ with interface:
         ]
     )
 
-
-# # Create the interface
-# interface = gr.Interface(
-#     train_model,
-#     [
-#         pretrained_model_name_or_path_input,
-#         v2_input,
-#         v_model_input, model_list,
-#         train_dir_input,
-#         image_folder_input,
-#         output_dir_input,
-#         max_resolution_input,
-#         learning_rate_input,
-#         lr_scheduler_input,
-#         lr_warmup_input,
-#         dataset_repeats_input,
-#         train_batch_size_input,
-#         epoch_input,
-#         save_every_n_epochs_input,
-#         mixed_precision_input,
-#         save_precision_input,
-#         seed_input,
-#         num_cpu_threads_per_process_input,
-#         train_text_encoder_input,
-#         convert_to_safetensors_input,
-#         convert_to_ckpt_input
-#     ],
-#     outputs="text"
-# )
-
 # Show the interface
 interface.launch()
 
-# # Get the values of the input variables
-# variable_values = train_model()
-
-# # Display the values in the output textbox
-# output.value = str(variable_values)
