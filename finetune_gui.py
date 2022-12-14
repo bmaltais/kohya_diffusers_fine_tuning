@@ -5,6 +5,7 @@ import os
 import subprocess
 import pathlib
 import shutil
+from easygui import fileopenbox, filesavebox, enterbox, diropenbox, msgbox
 
 
 def save_variables(
@@ -33,8 +34,21 @@ def save_variables(
     convert_to_ckpt,
     create_buckets,
     create_caption,
-    train
+    train,
 ):
+    original_file_path = file_path
+
+    if file_path == None or file_path == "":
+        file_path = filesavebox(
+            "Select the config file to save",
+            default="finetune.json",
+            filetypes="*.json",
+        )
+
+    if file_path == None:
+        file_path = original_file_path # In case a file_path was provided and the user decide to cancel the open action
+        return file_path
+
     # Return the values of the variables as a dictionary
     variables = {
         "pretrained_model_name_or_path": pretrained_model_name_or_path,
@@ -61,46 +75,168 @@ def save_variables(
         "convert_to_ckpt": convert_to_ckpt,
         "create_buckets": create_buckets,
         "create_caption": create_caption,
-        "train": train
+        "train": train,
+    }
+
+    # Save the data to the selected file
+    with open(file_path, "w") as file:
+        json.dump(variables, file)
+        msgbox("File was saved...")
+
+    return file_path
+
+
+def save_as_variables(
+    file_path,
+    pretrained_model_name_or_path,
+    v2,
+    v_parameterization,
+    train_dir,
+    image_folder,
+    output_dir,
+    max_resolution,
+    learning_rate,
+    lr_scheduler,
+    lr_warmup,
+    dataset_repeats,
+    train_batch_size,
+    epoch,
+    save_every_n_epochs,
+    mixed_precision,
+    save_precision,
+    seed,
+    num_cpu_threads_per_process,
+    train_text_encoder,
+    convert_to_safetensors,
+    convert_to_ckpt,
+    create_buckets,
+    create_caption,
+    train,
+):
+    original_file_path = file_path
+
+    file_path = filesavebox(
+        "Select the config file to save", default="finetune.json", filetypes="*.json"
+    )
+
+    if file_path == None:
+        file_path = original_file_path # In case a file_path was provided and the user decide to cancel the open action
+        return file_path
+
+    # Return the values of the variables as a dictionary
+    variables = {
+        "pretrained_model_name_or_path": pretrained_model_name_or_path,
+        "v2": v2,
+        "v_parameterization": v_parameterization,
+        # "model_list": model_list,
+        "train_dir": train_dir,
+        "image_folder": image_folder,
+        "output_dir": output_dir,
+        "max_resolution": max_resolution,
+        "learning_rate": learning_rate,
+        "lr_scheduler": lr_scheduler,
+        "lr_warmup": lr_warmup,
+        "dataset_repeats": dataset_repeats,
+        "train_batch_size": train_batch_size,
+        "epoch": epoch,
+        "save_every_n_epochs": save_every_n_epochs,
+        "mixed_precision": mixed_precision,
+        "save_precision": save_precision,
+        "seed": seed,
+        "num_cpu_threads_per_process": num_cpu_threads_per_process,
+        "train_text_encoder": train_text_encoder,
+        "convert_to_safetensors": convert_to_safetensors,
+        "convert_to_ckpt": convert_to_ckpt,
+        "create_buckets": create_buckets,
+        "create_caption": create_caption,
+        "train": train,
     }
 
     # Save the data to the selected file
     with open(file_path, "w") as file:
         json.dump(variables, file)
 
+    return file_path
 
-def load_variables(file_path):
-    # load variables from JSON file
-    with open(file_path, "r") as f:
-        my_data = json.load(f)
+
+def get_file_path(file_path):
+    file_path = fileopenbox("Select the config file to load", default=file_path, filetypes="*.json")
+
+    return file_path
+
+
+def get_folder_path():
+    folder_path = diropenbox("Select the directory to use")
+
+    return folder_path
+
+
+def open_config_file(
+    file_path,
+    pretrained_model_name_or_path,
+    v2,
+    v_parameterization,
+    train_dir,
+    image_folder,
+    output_dir,
+    max_resolution,
+    learning_rate,
+    lr_scheduler,
+    lr_warmup,
+    dataset_repeats,
+    train_batch_size,
+    epoch,
+    save_every_n_epochs,
+    mixed_precision,
+    save_precision,
+    seed,
+    num_cpu_threads_per_process,
+    train_text_encoder,
+    convert_to_safetensors,
+    convert_to_ckpt,
+    create_buckets,
+    create_caption,
+    train,
+):
+    original_file_path = file_path
+    file_path = get_file_path(file_path)
+
+    if file_path != "" and file_path != None:
+        print(file_path)
+        # load variables from JSON file
+        with open(file_path, "r") as f:
+            my_data = json.load(f)
+    else:
+        file_path = original_file_path # In case a file_path was provided and the user decide to cancel the open action
+        my_data = {}
 
     # Return the values of the variables as a dictionary
     return (
-        my_data.get("pretrained_model_name_or_path", None),
-        my_data.get("v2", None),
-        my_data.get("v_parameterization", None),
-        my_data.get("train_dir", None),
-        # my_data.get("model_list", None),
-        my_data.get("image_folder", None),
-        my_data.get("output_dir", None),
-        my_data.get("max_resolution", None),
-        my_data.get("learning_rate", None),
-        my_data.get("lr_scheduler", None),
-        my_data.get("lr_warmup", None),
-        my_data.get("dataset_repeats", None),
-        my_data.get("train_batch_size", None),
-        my_data.get("epoch", None),
-        my_data.get("save_every_n_epochs", None),
-        my_data.get("mixed_precision", None),
-        my_data.get("save_precision", None),
-        my_data.get("seed", None),
-        my_data.get("num_cpu_threads_per_process", None),
-        my_data.get("train_text_encoder", None),
-        my_data.get("convert_to_safetensors", None),
-        my_data.get("convert_to_ckpt", None),
-        my_data.get("create_buckets", None),
-        my_data.get("create_caption", None),
-        my_data.get("train", None)
+        file_path,
+        my_data.get("pretrained_model_name_or_path", pretrained_model_name_or_path),
+        my_data.get("v2", v2),
+        my_data.get("v_parameterization", v_parameterization),
+        my_data.get("train_dir", train_dir),
+        my_data.get("image_folder", image_folder),
+        my_data.get("output_dir", output_dir),
+        my_data.get("max_resolution", max_resolution),
+        my_data.get("learning_rate", learning_rate),
+        my_data.get("lr_scheduler", lr_scheduler),
+        my_data.get("lr_warmup", lr_warmup),
+        my_data.get("dataset_repeats", dataset_repeats),
+        my_data.get("train_batch_size", train_batch_size),
+        my_data.get("epoch", epoch),
+        my_data.get("save_every_n_epochs", save_every_n_epochs),
+        my_data.get("mixed_precision", mixed_precision),
+        my_data.get("save_precision", save_precision),
+        my_data.get("seed", seed),
+        my_data.get("num_cpu_threads_per_process", num_cpu_threads_per_process),
+        my_data.get("train_text_encoder", train_text_encoder),
+        my_data.get("convert_to_safetensors", convert_to_safetensors),
+        my_data.get("convert_to_ckpt", convert_to_ckpt),
+        my_data.get("create_buckets", create_buckets),
+        my_data.get("create_caption", create_caption),
+        my_data.get("train", train),
     )
 
 
@@ -204,15 +340,6 @@ def train_model(
         lr_warmup_steps = round(float(int(lr_warmup) * int(max_train_steps) / 100))
         print(f"lr_warmup_steps = {lr_warmup_steps}")
 
-        # print(f"v2: {v2}, v_parameterization: {v_parameterization}, train_text_encoder: {train_text_encoder}")
-        # v2_parm = "--v2" if v2 else '""
-        # v_parameterization_parm = "--v_parameterization" if v_parameterization else '""
-        # train_text_encoder_parm = "--train_text_encoder" if train_text_encoder else '""
-
-        # print(
-        #     f"v2: {v2_parm}, v_parameterization: {v_parameterization_parm}, train_text_encoder: {train_text_encoder_parm}"
-        # )
-
         run_cmd = f'accelerate launch --num_cpu_threads_per_process={num_cpu_threads_per_process} "script/fine_tune.py"'
         if v2:
             run_cmd += " --v2"
@@ -270,7 +397,10 @@ def train_model(
 
 def set_pretrained_model_name_or_path_input(value, v2, v_parameterization):
     # define a list of substrings to search for
-    substrings_v2 = ["stabilityai/stable-diffusion-2-1-base", "stabilityai/stable-diffusion-2-base"]
+    substrings_v2 = [
+        "stabilityai/stable-diffusion-2-1-base",
+        "stabilityai/stable-diffusion-2-base",
+    ]
 
     # check if $v2 and $v_parameterization are empty and if $pretrained_model_name_or_path contains any of the substrings in the v2 list
     if str(value) in substrings_v2:
@@ -281,18 +411,26 @@ def set_pretrained_model_name_or_path_input(value, v2, v_parameterization):
         return value, v2, v_parameterization
 
     # define a list of substrings to search for v-objective
-    substrings_v_parameterization = ["stabilityai/stable-diffusion-2-1", "stabilityai/stable-diffusion-2"]
+    substrings_v_parameterization = [
+        "stabilityai/stable-diffusion-2-1",
+        "stabilityai/stable-diffusion-2",
+    ]
 
     # check if $v2 and $v_parameterization are empty and if $pretrained_model_name_or_path contains any of the substrings in the v_parameterization list
     if str(value) in substrings_v_parameterization:
-        print("SD v2 v_parameterization detected. Setting --v2 parameter and --v_parameterization")
+        print(
+            "SD v2 v_parameterization detected. Setting --v2 parameter and --v_parameterization"
+        )
         v2 = True
         v_parameterization = True
 
         return value, v2, v_parameterization
 
     # define a list of substrings to v1.x
-    substrings_v1_model = ["CompVis/stable-diffusion-v1-4", "runwayml/stable-diffusion-v1-5"]
+    substrings_v1_model = [
+        "CompVis/stable-diffusion-v1-4",
+        "runwayml/stable-diffusion-v1-5",
+    ]
 
     if str(value) in substrings_v1_model:
         v2 = False
@@ -307,22 +445,39 @@ def set_pretrained_model_name_or_path_input(value, v2, v_parameterization):
 
         return value, v2, v_parameterization
 
-interface = gr.Blocks()
+
+def remove_doublequote(file_path):
+    if file_path != None:
+        file_path = file_path.replace('"', "")
+
+    return file_path
+
+
+css = ""
+
+if os.path.exists("./style.css"):
+    with open(os.path.join("./style.css"), "r", encoding="utf8") as file:
+        print("Load CSS...")
+        css += file.read() + "\n"
+
+interface = gr.Blocks(css=css)
 
 with interface:
     gr.Markdown("Enter kohya finetuner parameter using this interface.")
     with gr.Accordion("Configuration File Load/Save", open=False):
         with gr.Row():
-            config_file_name = gr.Textbox(label="Config file name", value="")
-            button_load_config = gr.Button("Load config")
-            button_save_config = gr.Button("Save config")
+            button_open_config = gr.Button("Open 📂", elem_id="open_folder")
+            button_save_config = gr.Button("Save 💾", elem_id="open_folder")
+            button_save_as_config = gr.Button("Save as... 💾", elem_id="open_folder")
+        config_file_name = gr.Textbox(
+            label="", placeholder="type file path or use buttons..."
+        )
+        config_file_name.change(
+            remove_doublequote, inputs=[config_file_name], outputs=[config_file_name]
+        )
     with gr.Tab("Source model"):
         # Define the input elements
         with gr.Row():
-            pretrained_model_name_or_path_input = gr.Textbox(
-                label="Pretrained model name or path",
-                placeholder="enter the path to custom model or name of pretrained model",
-            )
             model_list = gr.Dropdown(
                 label="(Optional) Model Quick Pick",
                 choices=[
@@ -332,30 +487,71 @@ with interface:
                     "stabilityai/stable-diffusion-2-1",
                     "stabilityai/stable-diffusion-2",
                     "runwayml/stable-diffusion-v1-5",
-                    "CompVis/stable-diffusion-v1-4"
+                    "CompVis/stable-diffusion-v1-4",
                 ],
             )
         with gr.Row():
+            pretrained_model_name_or_path_input = gr.Textbox(
+                label="Pretrained model name or path",
+                placeholder="enter the path to custom model or name of pretrained model",
+            )
+            pretrained_model_name_or_path_file = gr.Button(
+                "📋", elem_id="open_folder_small"
+            )
+            pretrained_model_name_or_path_folder = gr.Button(
+                "📂", elem_id="open_folder_small"
+            )
+            pretrained_model_name_or_path_file.click(
+                get_file_path, inputs=pretrained_model_name_or_path_file ,outputs=pretrained_model_name_or_path_input
+            )
+            pretrained_model_name_or_path_folder.click(
+                get_folder_path, outputs=pretrained_model_name_or_path_input
+            )
+        with gr.Row():
             v2_input = gr.Checkbox(label="v2", value=True)
-            v_parameterization_input = gr.Checkbox(label="v_parameterization", value=False)
+            v_parameterization_input = gr.Checkbox(
+                label="v_parameterization", value=False
+            )
         model_list.change(
             set_pretrained_model_name_or_path_input,
             inputs=[model_list, v2_input, v_parameterization_input],
-            outputs=[pretrained_model_name_or_path_input,
-                     v2_input, v_parameterization_input],
+            outputs=[
+                pretrained_model_name_or_path_input,
+                v2_input,
+                v_parameterization_input,
+            ],
         )
     with gr.Tab("Directories"):
         with gr.Row():
             train_dir_input = gr.Textbox(
-                label="Train directory", placeholder="directory where the training config files will be saved"
+                label="Train directory",
+                placeholder="directory where the training config files will be saved",
             )
+            train_dir_folder = gr.Button("📂", elem_id="open_folder_small")
+            train_dir_folder.click(get_folder_path, outputs=train_dir_input)
             image_folder_input = gr.Textbox(
-                label="Image folder", placeholder="directory where the training folders containing the images are located"
+                label="Training Image folder",
+                placeholder="directory where the training images are located",
             )
+            image_folder_input_folder = gr.Button("📂", elem_id="open_folder_small")
+            image_folder_input_folder.click(get_folder_path, outputs=image_folder_input)
             output_dir_input = gr.Textbox(
                 label="Output directory",
-                placeholder="directory where the model will be saved"
+                placeholder="directory where the model will be saved",
             )
+            output_dir_input_folder = gr.Button("📂", elem_id="open_folder_small")
+            output_dir_input_folder.click(get_folder_path, outputs=output_dir_input)
+        train_dir_input.change(
+            remove_doublequote, inputs=[train_dir_input], outputs=[train_dir_input]
+        )
+        image_folder_input.change(
+            remove_doublequote,
+            inputs=[image_folder_input],
+            outputs=[image_folder_input],
+        )
+        output_dir_input.change(
+            remove_doublequote, inputs=[output_dir_input], outputs=[output_dir_input]
+        )
     with gr.Tab("Training parameters"):
         with gr.Row():
             learning_rate_input = gr.Textbox(label="Learning rate", value=1e-6)
@@ -373,17 +569,11 @@ with interface:
             )
             lr_warmup_input = gr.Textbox(label="LR warmup", value=0)
         with gr.Row():
-            dataset_repeats_input = gr.Textbox(
-                label="Dataset repeats", value=40
-            )
-            train_batch_size_input = gr.Textbox(
-                label="Train batch size", value=1
-            )
+            dataset_repeats_input = gr.Textbox(label="Dataset repeats", value=40)
+            train_batch_size_input = gr.Textbox(label="Train batch size", value=1)
             epoch_input = gr.Textbox(label="Epoch", value=1)
         with gr.Row():
-            save_every_n_epochs_input = gr.Textbox(
-                label="Save every N epochs", value=1
-            )
+            save_every_n_epochs_input = gr.Textbox(label="Save every N epochs", value=1)
             mixed_precision_input = gr.Dropdown(
                 label="Mixed precision",
                 choices=[
@@ -410,16 +600,12 @@ with interface:
             train_text_encoder_input = gr.Checkbox(
                 label="Train text encoder", value=True
             )
-            max_resolution_input = gr.Textbox(
-                label="Max resolution", value="512,512"
-            )
+            max_resolution_input = gr.Textbox(label="Max resolution", value="512,512")
     with gr.Tab("Model conversion"):
         convert_to_safetensors_input = gr.Checkbox(
             label="Convert to SafeTensors", value=False
         )
-        convert_to_ckpt_input = gr.Checkbox(
-            label="Convert to CKPT", value=False
-        )
+        convert_to_ckpt_input = gr.Checkbox(label="Convert to CKPT", value=False)
     # define the buttons
 
     with gr.Box():
@@ -427,13 +613,13 @@ with interface:
             create_caption = gr.Checkbox(label="Create Caption", value=True)
             create_buckets = gr.Checkbox(label="Create Buckets", value=True)
             train = gr.Checkbox(label="Train", value=True)
-    
+
     button_run = gr.Button("Run")
 
-    button_load_config.click(
-        load_variables,
-        inputs=[config_file_name],
-        outputs=[
+    button_open_config.click(
+        open_config_file,
+        inputs=[
+            config_file_name,
             pretrained_model_name_or_path_input,
             v2_input,
             v_parameterization_input,
@@ -457,10 +643,37 @@ with interface:
             convert_to_ckpt_input,
             create_buckets,
             create_caption,
-            train
-        ]
+            train,
+        ],
+        outputs=[
+            config_file_name,
+            pretrained_model_name_or_path_input,
+            v2_input,
+            v_parameterization_input,
+            train_dir_input,
+            image_folder_input,
+            output_dir_input,
+            max_resolution_input,
+            learning_rate_input,
+            lr_scheduler_input,
+            lr_warmup_input,
+            dataset_repeats_input,
+            train_batch_size_input,
+            epoch_input,
+            save_every_n_epochs_input,
+            mixed_precision_input,
+            save_precision_input,
+            seed_input,
+            num_cpu_threads_per_process_input,
+            train_text_encoder_input,
+            convert_to_safetensors_input,
+            convert_to_ckpt_input,
+            create_buckets,
+            create_caption,
+            train,
+        ],
     )
-    
+
     button_save_config.click(
         save_variables,
         inputs=[
@@ -488,9 +701,43 @@ with interface:
             convert_to_ckpt_input,
             create_buckets,
             create_caption,
-            train
-        ]
+            train,
+        ],
+        outputs=[config_file_name],
     )
+
+    button_save_as_config.click(
+        save_as_variables,
+        inputs=[
+            config_file_name,
+            pretrained_model_name_or_path_input,
+            v2_input,
+            v_parameterization_input,
+            train_dir_input,
+            image_folder_input,
+            output_dir_input,
+            max_resolution_input,
+            learning_rate_input,
+            lr_scheduler_input,
+            lr_warmup_input,
+            dataset_repeats_input,
+            train_batch_size_input,
+            epoch_input,
+            save_every_n_epochs_input,
+            mixed_precision_input,
+            save_precision_input,
+            seed_input,
+            num_cpu_threads_per_process_input,
+            train_text_encoder_input,
+            convert_to_safetensors_input,
+            convert_to_ckpt_input,
+            create_buckets,
+            create_caption,
+            train,
+        ],
+        outputs=[config_file_name],
+    )
+
     button_run.click(
         train_model,
         inputs=[
@@ -518,9 +765,8 @@ with interface:
             train_text_encoder_input,
             convert_to_safetensors_input,
             convert_to_ckpt_input,
-        ]
+        ],
     )
 
 # Show the interface
 interface.launch()
-
