@@ -51,7 +51,7 @@ Answers to accelerate config:
 
 ### Optional: CUDNN 8.6
 
-This step is optional but can improve the learning speed a bit!!!
+This step is optional but can improve the learning speed for NVidia 4090 owners...
 
 Due to the filesize I can't host the DLLs needed for CUDNN 8.6 on Github, I strongly advise you download them for a speed boost in sample generation (almost 50% on 4090) you can download them from here: https://b1.thefileditch.ch/mwxKTEtelILoIbMbruuM.zip
 
@@ -104,6 +104,11 @@ There is now support for GUI based training using gradio. You can start the GUI 
 ```powershell
 python .\dreambooth_gui.py
 ```
+
+## Support
+
+Drop by the discord server for support: https://discord.com/channels/1023277529424986162/1026874833193140285
+
 
 ## Manual cli Execution
 
