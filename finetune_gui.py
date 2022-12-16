@@ -5,8 +5,8 @@ import os
 import subprocess
 import pathlib
 import shutil
-from easygui import fileopenbox, filesavebox, enterbox, diropenbox, msgbox
-
+from easygui import fileopenbox, filesavebox, diropenbox, msgbox
+from finetuning_gui.caption_gui import gradio_caption_gui_tab
 
 def save_variables(
     file_path,
@@ -601,11 +601,15 @@ with interface:
                 label="Train text encoder", value=True
             )
             max_resolution_input = gr.Textbox(label="Max resolution", value="512,512")
+        
     with gr.Tab("Model conversion"):
         convert_to_safetensors_input = gr.Checkbox(
             label="Convert to SafeTensors", value=False
         )
         convert_to_ckpt_input = gr.Checkbox(label="Convert to CKPT", value=False)
+    with gr.Tab("Utilities"):
+        # Captionning tab
+        gradio_caption_gui_tab()
     # define the buttons
 
     with gr.Box():
