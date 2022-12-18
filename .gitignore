@@ -4,3 +4,6 @@ mytraining.ps
 __pycache__
 *.txt
 cudnn_windows
+.vscode
+*.egg-info
+build

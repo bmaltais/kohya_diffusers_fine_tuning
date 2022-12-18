@@ -14,7 +14,7 @@ import cv2
 import torch
 from torchvision import transforms
 
-import model_util
+import library.model_util as model_util
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 

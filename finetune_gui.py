@@ -6,7 +6,8 @@ import subprocess
 import pathlib
 import shutil
 from easygui import fileopenbox, filesavebox, diropenbox, msgbox
-from finetuning_gui.caption_gui import gradio_caption_gui_tab
+from library.caption_gui import gradio_caption_gui_tab
+from library.convert_model_gui import gradio_convert_model_tab
 
 def save_configuration(
     save_as,
@@ -556,6 +557,7 @@ with interface:
     with gr.Tab("Utilities"):
         # Captioning tab
         gradio_caption_gui_tab()
+        gradio_convert_model_tab()
     # define the buttons
 
     with gr.Box():
