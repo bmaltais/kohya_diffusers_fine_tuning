@@ -8,12 +8,12 @@ import shutil
 from easygui import fileopenbox, filesavebox, diropenbox, msgbox
 from finetuning_gui.caption_gui import gradio_caption_gui_tab
 
-def save_variables(
+def save_configuration(
+    save_as,
     file_path,
     pretrained_model_name_or_path,
     v2,
     v_parameterization,
-    # model_list,
     train_dir,
     image_folder,
     output_dir,
@@ -30,31 +30,40 @@ def save_variables(
     seed,
     num_cpu_threads_per_process,
     train_text_encoder,
-    convert_to_safetensors,
-    convert_to_ckpt,
     create_buckets,
     create_caption,
     train,
+    save_model_as,
+    caption_extension
 ):
     original_file_path = file_path
+    
+    save_as_bool = True if save_as.get('label') == 'True' else False
 
-    if file_path == None or file_path == "":
+    if save_as_bool:
+        print('Save as...')
         file_path = filesavebox(
-            "Select the config file to save",
-            default="finetune.json",
-            filetypes="*.json",
+            'Select the config file to save',
+            default='finetune.json',
+            filetypes='*.json',
         )
+    else:
+        print('Save...')
+        if file_path == None or file_path == '':
+            file_path = filesavebox(
+                'Select the config file to save',
+                default='finetune.json',
+                filetypes='*.json',
+            )
 
     if file_path == None:
-        file_path = original_file_path # In case a file_path was provided and the user decide to cancel the open action
-        return file_path
+        return original_file_path
 
     # Return the values of the variables as a dictionary
     variables = {
         "pretrained_model_name_or_path": pretrained_model_name_or_path,
         "v2": v2,
         "v_parameterization": v_parameterization,
-        # "model_list": model_list,
         "train_dir": train_dir,
         "image_folder": image_folder,
         "output_dir": output_dir,
@@ -71,90 +80,17 @@ def save_variables(
         "seed": seed,
         "num_cpu_threads_per_process": num_cpu_threads_per_process,
         "train_text_encoder": train_text_encoder,
-        "convert_to_safetensors": convert_to_safetensors,
-        "convert_to_ckpt": convert_to_ckpt,
         "create_buckets": create_buckets,
         "create_caption": create_caption,
         "train": train,
+        'save_model_as': save_model_as,
+        'caption_extension': caption_extension
     }
 
     # Save the data to the selected file
     with open(file_path, "w") as file:
         json.dump(variables, file)
         msgbox("File was saved...")
-
-    return file_path
-
-
-def save_as_variables(
-    file_path,
-    pretrained_model_name_or_path,
-    v2,
-    v_parameterization,
-    train_dir,
-    image_folder,
-    output_dir,
-    max_resolution,
-    learning_rate,
-    lr_scheduler,
-    lr_warmup,
-    dataset_repeats,
-    train_batch_size,
-    epoch,
-    save_every_n_epochs,
-    mixed_precision,
-    save_precision,
-    seed,
-    num_cpu_threads_per_process,
-    train_text_encoder,
-    convert_to_safetensors,
-    convert_to_ckpt,
-    create_buckets,
-    create_caption,
-    train,
-):
-    original_file_path = file_path
-
-    file_path = filesavebox(
-        "Select the config file to save", default="finetune.json", filetypes="*.json"
-    )
-
-    if file_path == None:
-        file_path = original_file_path # In case a file_path was provided and the user decide to cancel the open action
-        return file_path
-
-    # Return the values of the variables as a dictionary
-    variables = {
-        "pretrained_model_name_or_path": pretrained_model_name_or_path,
-        "v2": v2,
-        "v_parameterization": v_parameterization,
-        # "model_list": model_list,
-        "train_dir": train_dir,
-        "image_folder": image_folder,
-        "output_dir": output_dir,
-        "max_resolution": max_resolution,
-        "learning_rate": learning_rate,
-        "lr_scheduler": lr_scheduler,
-        "lr_warmup": lr_warmup,
-        "dataset_repeats": dataset_repeats,
-        "train_batch_size": train_batch_size,
-        "epoch": epoch,
-        "save_every_n_epochs": save_every_n_epochs,
-        "mixed_precision": mixed_precision,
-        "save_precision": save_precision,
-        "seed": seed,
-        "num_cpu_threads_per_process": num_cpu_threads_per_process,
-        "train_text_encoder": train_text_encoder,
-        "convert_to_safetensors": convert_to_safetensors,
-        "convert_to_ckpt": convert_to_ckpt,
-        "create_buckets": create_buckets,
-        "create_caption": create_caption,
-        "train": train,
-    }
-
-    # Save the data to the selected file
-    with open(file_path, "w") as file:
-        json.dump(variables, file)
 
     return file_path
 
@@ -166,7 +102,7 @@ def get_file_path(file_path):
 
 
 def get_folder_path():
-    folder_path = diropenbox("Select the directory to use")
+    folder_path = diropenbox("Select the folder to use")
 
     return folder_path
 
@@ -192,11 +128,11 @@ def open_config_file(
     seed,
     num_cpu_threads_per_process,
     train_text_encoder,
-    convert_to_safetensors,
-    convert_to_ckpt,
     create_buckets,
     create_caption,
     train,
+    save_model_as,
+    caption_extension
 ):
     original_file_path = file_path
     file_path = get_file_path(file_path)
@@ -232,11 +168,11 @@ def open_config_file(
         my_data.get("seed", seed),
         my_data.get("num_cpu_threads_per_process", num_cpu_threads_per_process),
         my_data.get("train_text_encoder", train_text_encoder),
-        my_data.get("convert_to_safetensors", convert_to_safetensors),
-        my_data.get("convert_to_ckpt", convert_to_ckpt),
         my_data.get("create_buckets", create_buckets),
         my_data.get("create_caption", create_caption),
         my_data.get("train", train),
+        my_data.get('save_model_as', save_model_as),
+        my_data.get('caption_extension', caption_extension),
     )
 
 
@@ -263,8 +199,8 @@ def train_model(
     seed,
     num_cpu_threads_per_process,
     train_text_encoder,
-    convert_to_safetensors,
-    convert_to_ckpt,
+    save_model_as,
+    caption_extension
 ):
     def save_inference_file(output_dir, v2, v_parameterization):
         # Copy inference model for v2 if required
@@ -286,20 +222,19 @@ def train_model(
         if not os.path.exists(train_dir):
             os.mkdir(train_dir)
 
-        command = [
-            "./venv/Scripts/python.exe",
-            "script/merge_captions_to_metadata.py",
-            "--caption_extension",
-            ".txt",
-            image_folder,
-            "{}/meta_cap.json".format(train_dir),
-            "--full_path",
-        ]
+        run_cmd = f'./venv/Scripts/python.exe script/merge_captions_to_metadata.py'
+        if caption_extension == "":
+            run_cmd += f' --caption_extension=".txt"'
+        else:
+            run_cmd += f' --caption_extension={caption_extension}'
+        run_cmd += f" {image_folder}"
+        run_cmd += f" {train_dir}/meta_cap.json"
+        run_cmd += f" --full_path"
 
-        print(command)
+        print(run_cmd)
 
         # Run the command
-        subprocess.run(command)
+        subprocess.run(run_cmd)
 
     # create images buckets
     if create_buckets:
@@ -363,36 +298,19 @@ def train_model(
         run_cmd += f" --save_every_n_epochs={save_every_n_epochs}"
         run_cmd += f" --seed={seed}"
         run_cmd += f" --save_precision={save_precision}"
+        if not save_model_as == 'same as source model':
+            run_cmd += f' --save_model_as={save_model_as}'
 
         print(run_cmd)
         # Run the command
         subprocess.run(run_cmd)
 
-    # check if output_dir/last is a directory... therefore it is a diffuser model
+    # check if output_dir/last is a folder... therefore it is a diffuser model
     last_dir = pathlib.Path(f"{output_dir}/last")
-    print(last_dir)
-    if last_dir.is_dir():
-        if convert_to_ckpt:
-            print(f"Converting diffuser model {last_dir} to {last_dir}.ckpt")
-            os.system(
-                f"python ./tools/convert_diffusers20_original_sd.py {last_dir} {last_dir}.ckpt --{save_precision}"
-            )
-
-            save_inference_file(output_dir, v2, v_parameterization)
-
-        if convert_to_safetensors:
-            print(f"Converting diffuser model {last_dir} to {last_dir}.safetensors")
-            os.system(
-                f"python ./tools/convert_diffusers20_original_sd.py {last_dir} {last_dir}.safetensors --{save_precision}"
-            )
-
-            save_inference_file(output_dir, v2, v_parameterization)
-    else:
+    
+    if not last_dir.is_dir():
         # Copy inference model for v2 if required
         save_inference_file(output_dir, v2, v_parameterization)
-
-    # Return the values of the variables as a dictionary
-    # return
 
 
 def set_pretrained_model_name_or_path_input(value, v2, v_parameterization):
@@ -463,6 +381,8 @@ if os.path.exists("./style.css"):
 interface = gr.Blocks(css=css)
 
 with interface:
+    dummy_true = gr.Label(value=True, visible=False)
+    dummy_false = gr.Label(value=False, visible=False)
     gr.Markdown("Enter kohya finetuner parameter using this interface.")
     with gr.Accordion("Configuration File Load/Save", open=False):
         with gr.Row():
@@ -477,19 +397,6 @@ with interface:
         )
     with gr.Tab("Source model"):
         # Define the input elements
-        with gr.Row():
-            model_list = gr.Dropdown(
-                label="(Optional) Model Quick Pick",
-                choices=[
-                    "custom",
-                    "stabilityai/stable-diffusion-2-1-base",
-                    "stabilityai/stable-diffusion-2-base",
-                    "stabilityai/stable-diffusion-2-1",
-                    "stabilityai/stable-diffusion-2",
-                    "runwayml/stable-diffusion-v1-5",
-                    "CompVis/stable-diffusion-v1-4",
-                ],
-            )
         with gr.Row():
             pretrained_model_name_or_path_input = gr.Textbox(
                 label="Pretrained model name or path",
@@ -507,6 +414,30 @@ with interface:
             pretrained_model_name_or_path_folder.click(
                 get_folder_path, outputs=pretrained_model_name_or_path_input
             )
+            model_list = gr.Dropdown(
+                label="(Optional) Model Quick Pick",
+                choices=[
+                    "custom",
+                    "stabilityai/stable-diffusion-2-1-base",
+                    "stabilityai/stable-diffusion-2-base",
+                    "stabilityai/stable-diffusion-2-1",
+                    "stabilityai/stable-diffusion-2",
+                    "runwayml/stable-diffusion-v1-5",
+                    "CompVis/stable-diffusion-v1-4",
+                ],
+            )
+            save_model_as_dropdown = gr.Dropdown(
+                label='Save trained model as',
+                choices=[
+                    'same as source model',
+                    'ckpt',
+                    'diffusers',
+                    "diffusers_safetensors",
+                    'safetensors',
+                ],
+                value='same as source model'
+            )
+            
         with gr.Row():
             v2_input = gr.Checkbox(label="v2", value=True)
             v_parameterization_input = gr.Checkbox(
@@ -524,20 +455,20 @@ with interface:
     with gr.Tab("Directories"):
         with gr.Row():
             train_dir_input = gr.Textbox(
-                label="Train directory",
-                placeholder="directory where the training config files will be saved",
+                label="Train folder",
+                placeholder="folder where the training config files will be saved",
             )
             train_dir_folder = gr.Button("📂", elem_id="open_folder_small")
             train_dir_folder.click(get_folder_path, outputs=train_dir_input)
             image_folder_input = gr.Textbox(
                 label="Training Image folder",
-                placeholder="directory where the training images are located",
+                placeholder="folder where the training images are located",
             )
             image_folder_input_folder = gr.Button("📂", elem_id="open_folder_small")
             image_folder_input_folder.click(get_folder_path, outputs=image_folder_input)
             output_dir_input = gr.Textbox(
-                label="Output directory",
-                placeholder="directory where the model will be saved",
+                label="Output folder",
+                placeholder="folder where the model will be saved",
             )
             output_dir_input_folder = gr.Button("📂", elem_id="open_folder_small")
             output_dir_input_folder.click(get_folder_path, outputs=output_dir_input)
@@ -570,10 +501,16 @@ with interface:
             lr_warmup_input = gr.Textbox(label="LR warmup", value=0)
         with gr.Row():
             dataset_repeats_input = gr.Textbox(label="Dataset repeats", value=40)
-            train_batch_size_input = gr.Textbox(label="Train batch size", value=1)
+            train_batch_size_input = gr.Slider(
+                minimum=1,
+                maximum=32,
+                label='Train batch size',
+                value=1,
+                step=1,
+            )
             epoch_input = gr.Textbox(label="Epoch", value=1)
-        with gr.Row():
             save_every_n_epochs_input = gr.Textbox(label="Save every N epochs", value=1)
+        with gr.Row():
             mixed_precision_input = gr.Dropdown(
                 label="Mixed precision",
                 choices=[
@@ -592,31 +529,40 @@ with interface:
                 ],
                 value="fp16",
             )
+            num_cpu_threads_per_process_input = gr.Slider(
+                minimum=1,
+                maximum=os.cpu_count(),
+                step=1,
+                label='Number of CPU threads per process',
+                value=os.cpu_count(),
+            )
         with gr.Row():
             seed_input = gr.Textbox(label="Seed", value=1234)
-            num_cpu_threads_per_process_input = gr.Textbox(
-                label="Number of CPU threads per process", value=4
+            max_resolution_input = gr.Textbox(label="Max resolution", value="512,512")
+        with gr.Row():
+            caption_extention_input = gr.Textbox(
+                label='Caption Extension',
+                placeholder='(Optional) Extension for caption files. default: .txt',
             )
             train_text_encoder_input = gr.Checkbox(
                 label="Train text encoder", value=True
             )
-            max_resolution_input = gr.Textbox(label="Max resolution", value="512,512")
         
-    with gr.Tab("Model conversion"):
-        convert_to_safetensors_input = gr.Checkbox(
-            label="Convert to SafeTensors", value=False
-        )
-        convert_to_ckpt_input = gr.Checkbox(label="Convert to CKPT", value=False)
+    # with gr.Tab("Model conversion"):
+    #     convert_to_safetensors_input = gr.Checkbox(
+    #         label="Convert to SafeTensors", value=False
+    #     )
+    #     convert_to_ckpt_input = gr.Checkbox(label="Convert to CKPT", value=False)
     with gr.Tab("Utilities"):
-        # Captionning tab
+        # Captioning tab
         gradio_caption_gui_tab()
     # define the buttons
 
     with gr.Box():
         with gr.Row():
-            create_caption = gr.Checkbox(label="Create Caption", value=True)
-            create_buckets = gr.Checkbox(label="Create Buckets", value=True)
-            train = gr.Checkbox(label="Train", value=True)
+            create_caption = gr.Checkbox(label="Generate caption database", value=True)
+            create_buckets = gr.Checkbox(label="Generate image buckets", value=True)
+            train = gr.Checkbox(label="Train model", value=True)
 
     button_run = gr.Button("Run")
 
@@ -643,11 +589,11 @@ with interface:
             seed_input,
             num_cpu_threads_per_process_input,
             train_text_encoder_input,
-            convert_to_safetensors_input,
-            convert_to_ckpt_input,
             create_buckets,
             create_caption,
             train,
+            save_model_as_dropdown,
+            caption_extention_input
         ],
         outputs=[
             config_file_name,
@@ -670,17 +616,18 @@ with interface:
             seed_input,
             num_cpu_threads_per_process_input,
             train_text_encoder_input,
-            convert_to_safetensors_input,
-            convert_to_ckpt_input,
             create_buckets,
             create_caption,
             train,
+            save_model_as_dropdown,
+            caption_extention_input
         ],
     )
 
     button_save_config.click(
-        save_variables,
+        save_configuration,
         inputs=[
+            dummy_false,
             config_file_name,
             pretrained_model_name_or_path_input,
             v2_input,
@@ -701,18 +648,19 @@ with interface:
             seed_input,
             num_cpu_threads_per_process_input,
             train_text_encoder_input,
-            convert_to_safetensors_input,
-            convert_to_ckpt_input,
             create_buckets,
             create_caption,
             train,
+            save_model_as_dropdown,
+            caption_extention_input
         ],
         outputs=[config_file_name],
     )
 
     button_save_as_config.click(
-        save_as_variables,
+        save_configuration,
         inputs=[
+            dummy_true,
             config_file_name,
             pretrained_model_name_or_path_input,
             v2_input,
@@ -733,11 +681,11 @@ with interface:
             seed_input,
             num_cpu_threads_per_process_input,
             train_text_encoder_input,
-            convert_to_safetensors_input,
-            convert_to_ckpt_input,
             create_buckets,
             create_caption,
             train,
+            save_model_as_dropdown,
+            caption_extention_input
         ],
         outputs=[config_file_name],
     )
@@ -767,8 +715,8 @@ with interface:
             seed_input,
             num_cpu_threads_per_process_input,
             train_text_encoder_input,
-            convert_to_safetensors_input,
-            convert_to_ckpt_input,
+            save_model_as_dropdown,
+            caption_extention_input
         ],
     )
 
