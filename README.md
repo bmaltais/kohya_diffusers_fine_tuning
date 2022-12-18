@@ -113,7 +113,7 @@ Drop by the discord server for support: https://discord.com/channels/10415185624
 
 ## Change history
 
-* 12/17 (v18) update:
+* 12/17 (v9) update:
     - Save model as option added to fine_tune.py
     - Save model as option added to GUI
     - Retirement of cli based documentation. Will focus attention to GUI based training
