@@ -14,7 +14,7 @@ def caption_images(caption_text_input, images_dir_input, overwrite_input, captio
         msgbox("Image folder is missing...")
         return
     
-    print(f"Captionning files in {images_dir_input} with {caption_text_input}...")
+    print(f"Captioning files in {images_dir_input} with {caption_text_input}...")
     run_cmd = f'python "tools/caption.py"'
     run_cmd += f' --caption_text="{caption_text_input}"'
     if overwrite_input:
@@ -28,14 +28,14 @@ def caption_images(caption_text_input, images_dir_input, overwrite_input, captio
     # Run the command
     subprocess.run(run_cmd)
     
-    print("...captionning done")
+    print("...captioning done")
 
 ###
 # Gradio UI
 ###
 
 def gradio_caption_gui_tab():
-    with gr.Tab("Captionning"):
+    with gr.Tab("Captioning"):
         gr.Markdown(
             "This utility will allow the creation of caption files for each images in a folder."
         )
@@ -57,7 +57,7 @@ def gradio_caption_gui_tab():
             )
         with gr.Row():
             images_dir_input = gr.Textbox(
-                label="Image forder to caption",
+                label="Image folder to caption",
                 placeholder="Directory containing the images to caption",
                 interactive=True,
             )
