@@ -12,7 +12,12 @@ safetensors==0.2.6
 gradio
 altair
 easygui
+# for BLIP captioning
 requests
 timm
 fairscale
+# for WD14 captioning
+tensorflow<2.11
+huggingface-hub
+# for kohya_ss library
 .
