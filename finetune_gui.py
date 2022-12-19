@@ -19,6 +19,7 @@ def save_configuration(
     train_dir,
     image_folder,
     output_dir,
+    logging_dir,
     max_resolution,
     learning_rate,
     lr_scheduler,
@@ -69,6 +70,7 @@ def save_configuration(
         "train_dir": train_dir,
         "image_folder": image_folder,
         "output_dir": output_dir,
+        "logging_dir": logging_dir,
         "max_resolution": max_resolution,
         "learning_rate": learning_rate,
         "lr_scheduler": lr_scheduler,
@@ -117,6 +119,7 @@ def open_config_file(
     train_dir,
     image_folder,
     output_dir,
+    logging_dir,
     max_resolution,
     learning_rate,
     lr_scheduler,
@@ -157,6 +160,7 @@ def open_config_file(
         my_data.get("train_dir", train_dir),
         my_data.get("image_folder", image_folder),
         my_data.get("output_dir", output_dir),
+        my_data.get("logging_dir", logging_dir),
         my_data.get("max_resolution", max_resolution),
         my_data.get("learning_rate", learning_rate),
         my_data.get("lr_scheduler", lr_scheduler),
@@ -179,8 +183,8 @@ def open_config_file(
 
 
 def train_model(
-    create_caption,
-    create_buckets,
+    generate_caption_database,
+    generate_image_buckets,
     train,
     pretrained_model_name_or_path,
     v2,
@@ -188,6 +192,7 @@ def train_model(
     train_dir,
     image_folder,
     output_dir,
+    logging_dir,
     max_resolution,
     learning_rate,
     lr_scheduler,
@@ -220,7 +225,7 @@ def train_model(
             )
 
     # create caption json file
-    if create_caption:
+    if generate_caption_database:
         if not os.path.exists(train_dir):
             os.mkdir(train_dir)
 
@@ -239,7 +244,7 @@ def train_model(
         subprocess.run(run_cmd)
 
     # create images buckets
-    if create_buckets:
+    if generate_image_buckets:
         command = [
             "./venv/Scripts/python.exe",
             "script/prepare_buckets_latents.py",
@@ -288,6 +293,8 @@ def train_model(
         run_cmd += f" --in_json={train_dir}/meta_lat.json"
         run_cmd += f" --train_data_dir={image_folder}"
         run_cmd += f" --output_dir={output_dir}"
+        if not logging_dir == "":
+            run_cmd += f" --logging_dir={logging_dir}"
         run_cmd += f" --train_batch_size={train_batch_size}"
         run_cmd += f" --dataset_repeats={dataset_repeats}"
         run_cmd += f" --learning_rate={learning_rate}"
@@ -457,23 +464,36 @@ with interface:
     with gr.Tab("Directories"):
         with gr.Row():
             train_dir_input = gr.Textbox(
-                label="Train folder",
-                placeholder="folder where the training config files will be saved",
+                label="Training config folder",
+                placeholder="folder where the training configuration files will be saved",
             )
             train_dir_folder = gr.Button("📂", elem_id="open_folder_small")
             train_dir_folder.click(get_folder_path, outputs=train_dir_input)
+            
             image_folder_input = gr.Textbox(
                 label="Training Image folder",
                 placeholder="folder where the training images are located",
             )
             image_folder_input_folder = gr.Button("📂", elem_id="open_folder_small")
             image_folder_input_folder.click(get_folder_path, outputs=image_folder_input)
+        with gr.Row():
             output_dir_input = gr.Textbox(
                 label="Output folder",
                 placeholder="folder where the model will be saved",
             )
             output_dir_input_folder = gr.Button("📂", elem_id="open_folder_small")
             output_dir_input_folder.click(get_folder_path, outputs=output_dir_input)
+            
+            logging_dir_input = gr.Textbox(
+                label='Logging folder',
+                placeholder='Optional: enable logging and output TensorBoard log to this folder',
+            )
+            logging_dir_input_folder = gr.Button(
+                '📂', elem_id='open_folder_small'
+            )
+            logging_dir_input_folder.click(
+                get_folder_path, outputs=logging_dir_input
+            )
         train_dir_input.change(
             remove_doublequote, inputs=[train_dir_input], outputs=[train_dir_input]
         )
@@ -580,6 +600,7 @@ with interface:
             train_dir_input,
             image_folder_input,
             output_dir_input,
+            logging_dir_input_folder,
             max_resolution_input,
             learning_rate_input,
             lr_scheduler_input,
@@ -607,6 +628,7 @@ with interface:
             train_dir_input,
             image_folder_input,
             output_dir_input,
+            logging_dir_input_folder,
             max_resolution_input,
             learning_rate_input,
             lr_scheduler_input,
@@ -639,6 +661,7 @@ with interface:
             train_dir_input,
             image_folder_input,
             output_dir_input,
+            logging_dir_input_folder,
             max_resolution_input,
             learning_rate_input,
             lr_scheduler_input,
@@ -672,6 +695,7 @@ with interface:
             train_dir_input,
             image_folder_input,
             output_dir_input,
+            logging_dir_input_folder,
             max_resolution_input,
             learning_rate_input,
             lr_scheduler_input,
@@ -706,6 +730,7 @@ with interface:
             train_dir_input,
             image_folder_input,
             output_dir_input,
+            logging_dir_input_folder,
             max_resolution_input,
             learning_rate_input,
             lr_scheduler_input,
