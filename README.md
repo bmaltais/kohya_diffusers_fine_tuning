@@ -113,6 +113,8 @@ Drop by the discord server for support: https://discord.com/channels/10415185624
 
 ## Change history
 
+* 12/18 (v9.3) update:
+    - Add logging option
 * 12/18 (v9.2) update:
     - Add BLIP Captioning utility
 * 12/18 (v9.1) update:
