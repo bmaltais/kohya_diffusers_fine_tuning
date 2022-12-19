@@ -113,6 +113,8 @@ Drop by the discord server for support: https://discord.com/channels/10415185624
 
 ## Change history
 
+* 12/18 (v9.2) update:
+    - Add BLIP Captioning utility
 * 12/18 (v9.1) update:
     - Add Stable Diffusion model conversion utility. Make sure to run `pip upgrade -U -r requirements.txt` after updating to this release as this introduce new pip requirements.
 * 12/17 (v9) update:

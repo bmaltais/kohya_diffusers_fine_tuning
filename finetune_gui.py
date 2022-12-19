@@ -8,6 +8,7 @@ import shutil
 from easygui import fileopenbox, filesavebox, diropenbox, msgbox
 from library.caption_gui import gradio_caption_gui_tab
 from library.convert_model_gui import gradio_convert_model_tab
+from library.blip_caption_gui import gradio_blip_caption_gui_tab
 
 def save_configuration(
     save_as,
@@ -556,6 +557,7 @@ with interface:
     #     convert_to_ckpt_input = gr.Checkbox(label="Convert to CKPT", value=False)
     with gr.Tab("Utilities"):
         # Captioning tab
+        gradio_blip_caption_gui_tab()
         gradio_caption_gui_tab()
         gradio_convert_model_tab()
     # define the buttons
