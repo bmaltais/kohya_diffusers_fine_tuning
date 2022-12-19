@@ -113,6 +113,9 @@ Drop by the discord server for support: https://discord.com/channels/10415185624
 
 ## Change history
 
+* 12/19 (v9.5) update:
+    - Fix file/folder dialog opening behind the browser window
+    - Update GUI layout to be more logical
 * 12/18 (v9.4) update:
     - Add WD14 tagging to utilities
 * 12/18 (v9.3) update:
