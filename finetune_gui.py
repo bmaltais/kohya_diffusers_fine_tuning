@@ -5,17 +5,23 @@ import os
 import subprocess
 import pathlib
 import shutil
+
 # from easygui import fileopenbox, filesavebox, diropenbox, msgbox
 from library.basic_caption_gui import gradio_basic_caption_gui_tab
 from library.convert_model_gui import gradio_convert_model_tab
 from library.blip_caption_gui import gradio_blip_caption_gui_tab
 from library.wd14_caption_gui import gradio_wd14_caption_gui_tab
-from library.common_gui import get_folder_path, get_file_path, get_saveasfile_path
+from library.common_gui import (
+    get_folder_path,
+    get_file_path,
+    get_saveasfile_path,
+)
 
 folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
-document_symbol = '\U0001F4C4' # 📄
+document_symbol = '\U0001F4C4'   # 📄
+
 
 def save_configuration(
     save_as,
@@ -52,21 +58,13 @@ def save_configuration(
 
     if save_as_bool:
         print('Save as...')
-        # file_path = filesavebox(
-        #     'Select the config file to save',
-        #     default='finetune.json',
-        #     filetypes='*.json',
-        # )
         file_path = get_saveasfile_path(file_path)
     else:
         print('Save...')
         if file_path == None or file_path == '':
-            # file_path = filesavebox(
-            #     'Select the config file to save',
-            #     default='finetune.json',
-            #     filetypes='*.json',
-            # )
             file_path = get_saveasfile_path(file_path)
+
+    # print(file_path)
 
     if file_path == None:
         return original_file_path
@@ -106,37 +104,6 @@ def save_configuration(
     #     msgbox('File was saved...')
 
     return file_path
-
-
-# def get_file_path(file_path='', defaultextension='.json'):
-#     current_file_path = file_path
-#     # print(f'current file path: {current_file_path}')
-    
-#     root = Tk()
-#     root.wm_attributes('-topmost', 1)
-#     root.withdraw()
-#     file_path = filedialog.askopenfilename(filetypes = (("Config files", "*.json"), ("All files", "*")), defaultextension=defaultextension)
-#     root.destroy()
-    
-#     if file_path == '':
-#         file_path = current_file_path
-
-#     return file_path
-
-
-# def get_folder_path(folder_path=''):
-#     current_folder_path = folder_path
-    
-#     root = Tk()
-#     root.wm_attributes('-topmost', 1)
-#     root.withdraw()
-#     folder_path = filedialog.askdirectory()
-#     root.destroy()
-    
-#     if folder_path == '':
-#         folder_path = current_folder_path
-
-#     return folder_path
 
 
 def open_config_file(
@@ -436,8 +403,12 @@ with interface:
         gr.Markdown('Enter kohya finetuner parameter using this interface.')
         with gr.Accordion('Configuration File Load/Save', open=False):
             with gr.Row():
-                button_open_config = gr.Button(f'Open {folder_symbol}', elem_id='open_folder')
-                button_save_config = gr.Button(f'Save {save_style_symbol}', elem_id='open_folder')
+                button_open_config = gr.Button(
+                    f'Open {folder_symbol}', elem_id='open_folder'
+                )
+                button_save_config = gr.Button(
+                    f'Save {save_style_symbol}', elem_id='open_folder'
+                )
                 button_save_as_config = gr.Button(
                     f'Save as... {save_style_symbol}', elem_id='open_folder'
                 )
@@ -470,7 +441,7 @@ with interface:
                 pretrained_model_name_or_path_folder.click(
                     get_folder_path,
                     inputs=pretrained_model_name_or_path_input,
-                    outputs=pretrained_model_name_or_path_input
+                    outputs=pretrained_model_name_or_path_input,
                 )
                 model_list = gr.Dropdown(
                     label='(Optional) Model Quick Pick',
@@ -516,8 +487,12 @@ with interface:
                     label='Training config folder',
                     placeholder='folder where the training configuration files will be saved',
                 )
-                train_dir_folder = gr.Button(folder_symbol, elem_id='open_folder_small')
-                train_dir_folder.click(get_folder_path, outputs=train_dir_input)
+                train_dir_folder = gr.Button(
+                    folder_symbol, elem_id='open_folder_small'
+                )
+                train_dir_folder.click(
+                    get_folder_path, outputs=train_dir_input
+                )
 
                 image_folder_input = gr.Textbox(
                     label='Training Image folder',
@@ -568,7 +543,9 @@ with interface:
             )
         with gr.Tab('Training parameters'):
             with gr.Row():
-                learning_rate_input = gr.Textbox(label='Learning rate', value=1e-6)
+                learning_rate_input = gr.Textbox(
+                    label='Learning rate', value=1e-6
+                )
                 lr_scheduler_input = gr.Dropdown(
                     label='LR Scheduler',
                     choices=[
@@ -645,9 +622,9 @@ with interface:
                     label='Generate image buckets', value=True
                 )
                 train = gr.Checkbox(label='Train model', value=True)
-                
+
         button_run = gr.Button('Run')
-        
+
         button_run.click(
             train_model,
             inputs=[
@@ -678,7 +655,7 @@ with interface:
                 caption_extention_input,
             ],
         )
-        
+
         button_open_config.click(
             open_config_file,
             inputs=[
