@@ -113,6 +113,8 @@ Drop by the discord server for support: https://discord.com/channels/10415185624
 
 ## Change history
 
+* 12/20 (v9.6) update:
+    - fix issue with config file save and opening
 * 12/19 (v9.5) update:
     - Fix file/folder dialog opening behind the browser window
     - Update GUI layout to be more logical
