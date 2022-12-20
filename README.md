@@ -1,5 +1,13 @@
 # Diffusers Fine Tuning
 
+NOTICE: This repo will be archived. THe code has been folded back into the main kohya_ss repo to align with kohya_ss move away from note.com to a github repo to publish his code.
+
+Sorry for the inconveniences
+
+New code location: https://github.com/bmaltais/kohya_ss
+
+----
+
 This subfolder provide all the required tools  to run the diffusers fine tuning version found in this note: https://note.com/kohya_ss/n/nbf7ce8d80f29
 
 ## Required Dependencies
